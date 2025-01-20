@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loop Demonstration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .code-line {
+            padding: 2px 4px;
+            margin: 2px 0;
+            border-radius: 2px;
+            font-family: monospace;
+            transition: background-color 0.3s;
+        }
+
+        .highlight {
+            background-color: #ffeb3b;
+        }
+
+        .output-box {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .variable-display {
+            font-family: monospace;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Loop Demonstration</h2>
+        <div id="pseudocode">
+            <div class="code-line" id="line1">Start</div>
+            <div class="code-line" id="line2">Set x = 1</div>
+            <div class="code-line" id="line3">While x ≤ 10 Do</div>
+            <div class="code-line" id="line4">    Output x</div>
+            <div class="code-line" id="line5">    Increment x by 1</div>
+            <div class="code-line" id="line6">End While</div>
+            <div class="code-line" id="line7">Output "Loop completed"</div>
+            <div class="code-line" id="line8">End</div>
+        </div>
+
+        <div class="variable-display">
+            Current value of x: <span id="x-value">1</span>
+        </div>
+
+        <button id="runButton">Run/Step</button>
+        <button id="resetButton">Reset</button>
+
+        <div class="output-box" id="output"></div>
+    </div>
+
+    <script>
+        let x = 1;
+        let step = 0;
+        let isRunning = false;
+
+        const output = document.getElementById('output');
+        const xValue = document.getElementById('x-value');
+        const runButton = document.getElementById('runButton');
+        const resetButton = document.getElementById('resetButton');
+
+        function highlightLine(lineNumber) {
+            // Clear all highlights
+            document.querySelectorAll('.code-line').forEach(line => {
+                line.classList.remove('highlight');
+            });
+            // Add highlight to specified line
+            document.getElementById('line' + lineNumber)?.classList.add('highlight');
+        }
+
+        function addOutput(text) {
+            const line = document.createElement('div');
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateDisplay() {
+            xValue.textContent = x;
+        }
+
+        function executeStep() {
+            switch(step) {
+                case 0: // Start
+                    highlightLine(1);
+                    addOutput("Program started");
+                    break;
+                    
+                case 1: // Set x = 1
+                    highlightLine(2);
+                    x = 1;
+                    updateDisplay();
+                    addOutput("x initialized to 1");
+                    break;
+
+                case 2: // While condition check
+                    highlightLine(3);
+                    if (x <= 10) {
+                        addOutput(`Checking if ${x} ≤ 10: True`);
+                        step = 3;
+                    } else {
+                        addOutput(`Checking if ${x} ≤ 10: False`);
+                        step = 6;
+                    }
+                    return executeStep();
+
+                case 3: // Output x
+                    highlightLine(4);
+                    addOutput(`Current value of x: ${x}`);
+                    break;
+
+                case 4: // Increment x
+                    highlightLine(5);
+                    x++;
+                    updateDisplay();
+                    addOutput(`Incremented x to ${x}`);
+                    step = 1; // Go back to while condition
+                    break;
+
+                case 6: // Loop completed
+                    highlightLine(7);
+                    addOutput("Loop completed");
+                    break;
+
+                case 7: // End
+                    highlightLine(8);
+                    addOutput("Program ended");
+                    runButton.disabled = true;
+                    break;
+
+                default:
+                    runButton.disabled = true;
+                    return;
+            }
+            step++;
+        }
+
+        function reset() {
+            x = 1;
+            step = 0;
+            output.innerHTML = '';
+            runButton.disabled = false;
+            updateDisplay();
+            document.querySelectorAll('.code-line').forEach(line => {
+                line.classList.remove('highlight');
+            });
+        }
+
+        runButton.addEventListener('click', executeStep);
+        resetButton.addEventListener('click', reset);
+
+        // Initialize
+        updateDisplay();
+    </script>
+</body>
+</html>
