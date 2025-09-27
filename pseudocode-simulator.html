@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Pseudocode Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                    },
+                    fontFamily: {
+                        mono: ['Consolas', 'Monaco', 'Courier New', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .code-line {
+                @apply py-0.5 px-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors;
+            }
+            .code-line.active {
+                @apply bg-yellow-100 dark:bg-yellow-900/30 font-medium;
+            }
+            .dropdown-content {
+                @apply absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 shadow-lg rounded-md overflow-hidden z-50;
+                display: none;
+            }
+            .dropdown-content.hidden {
+                display: none;
+            }
+            .dropdown-content:not(.hidden) {
+                display: block;
+            }
+            .dropdown-item {
+                @apply block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <header class="bg-white dark:bg-gray-800 shadow-md py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-primary flex items-center">
+                <i class="fa fa-code mr-3"></i>
+                Pseudocode Simulator
+            </h1>
+            <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <i class="fa fa-moon-o dark:hidden"></i>
+                <i class="fa fa-sun-o hidden dark:block"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Pseudocode Editor</h2>
+                <div class="flex gap-2">
+                    <div style="position: relative; display: inline-block;">
+                        <button id="exampleBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm flex items-center">
+                            <i class="fa fa-file-text-o mr-1"></i> Load Example
+                            <i class="fa fa-chevron-down ml-1 text-xs"></i>
+                        </button>
+                        <div id="exampleDropdown" class="dropdown-content">
+                            <div class="dropdown-item" data-id="variables">1. Declare Variables</div>
+                            <div class="dropdown-item" data-id="assignment">2. Assign Values</div>
+                            <div class="dropdown-item" data-id="input-output">3. Input/Output</div>
+                            <div class="dropdown-item" data-id="if-then">4. If...Then</div>
+                            <div class="dropdown-item" data-id="if-else">5. If...Then...Else</div>
+                            <div class="dropdown-item" data-id="for-loop">6. For Loops</div>
+                            <div class="dropdown-item" data-id="while-loop">7. While Loops</div>
+                            <div class="dropdown-item" data-id="do-while">8. Do...While Loops</div>
+                            <div class="dropdown-item" data-id="repeat-until">9. Repeat...Until Loops</div>
+                            <div class="dropdown-item" data-id="comprehensive">10. Comprehensive Test</div>
+                            <div class="dropdown-item" data-id="while-debug">11. WHILE Loop Debug</div>
+                        </div>
+                    </div>
+                    <button id="clear-code" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">
+                        <i class="fa fa-trash-o mr-1"></i> Clear
+                    </button>
+                </div>
+            </div>
+            <textarea id="code-input" class="w-full h-64 p-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="Enter your pseudocode here..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+                    <h2 class="text-lg font-semibold mb-3">Execution Controls</h2>
+                    <div class="flex flex-wrap gap-3">
+                        <button id="run-btn" class="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/90 transition-colors flex items-center">
+                            <i class="fa fa-play mr-2"></i> Run
+                        </button>
+                        <button id="step-btn" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors flex items-center">
+                            <i class="fa fa-step-forward mr-2"></i> Step
+                        </button>
+                        <button id="reset-btn" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors flex items-center" disabled>
+                            <i class="fa fa-refresh mr-2"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <h2 class="text-lg font-semibold mb-3">Variables</h2>
+                    <div id="variables-container" class="max-h-40 overflow-y-auto">
+                        <div class="text-gray-500 dark:text-gray-400 text-center py-4">
+                            No variables yet
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+                    <h2 class="text-lg font-semibold mb-3">Code Execution</h2>
+                    <div id="code-visualization" class="bg-gray-50 dark:bg-gray-900 rounded p-3 font-mono text-sm h-40 overflow-y-auto">
+                        <div class="text-gray-500 dark:text-gray-400 text-center py-8">
+                            Code will appear here during execution
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <h2 class="text-lg font-semibold mb-3">Output Console</h2>
+                    <div id="output-console" class="bg-gray-50 dark:bg-gray-900 rounded p-3 h-40 overflow-y-auto font-mono text-sm">
+                        <div class="text-gray-500 dark:text-gray-400 italic">
+                            Output will appear here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        });
+
+        // Example data
+        const examples = {
+            variables: `// Declaring Variables Example
+// Variables store data that can be used and changed
+
+// Numeric variables
+age = 25
+temperature = 98.6
+count = 0
+
+// Text (string) variables
+name = "John Doe"
+message = "Hello, world!"
+
+// Boolean variables (true/false)
+is_active = true
+has_access = false
+
+// Print variable values
+PRINT "Variables declared:"
+PRINT "Name:", name
+PRINT "Age:", age
+PRINT "Active status:", is_active`,
+
+            assignment: `// Assigning Values Example
+// Variables can be assigned values directly or through calculations
+
+// Initial assignments
+x = 10
+y = 5
+name = "Alice"
+
+PRINT "Initial values:"
+PRINT "x =", x
+PRINT "y =", y
+
+// Assignment with calculation
+sum = x + y
+product = x * y
+difference = x - y
+
+// String assignment
+greeting = "Hello, " + name
+
+// Update existing variable
+x = x + 1  // Increment x by 1
+
+PRINT "\\nAfter assignments:"
+PRINT "sum =", sum
+PRINT "product =", product
+PRINT "greeting =", greeting
+PRINT "updated x =", x`,
+
+            "input-output": `// Input and Output Example
+// Demonstrates both INPUT and PRINT statements
+
+// Get user information using INPUT
+INPUT "What is your name?", name
+INPUT "How old are you?", age
+INPUT "What is your favorite color?", favorite_color
+
+// Display the collected information
+PRINT "\\nThank you for your input!"
+PRINT "Your information:"
+PRINT "Name:", name
+PRINT "Age:", age
+PRINT "Favorite color:", favorite_color
+
+// Calculations with input
+INPUT "Enter a price:", price
+INPUT "Enter quantity:", quantity
+total = price * quantity
+PRINT "\\nOrder calculation:"
+PRINT "Price per item:", price
+PRINT "Quantity:", quantity
+PRINT "Total cost:", total`,
+
+            "if-then": `// If...Then Example
+// Executes code only when a condition is true
+
+// Simple condition
+temperature = 85
+PRINT "Checking temperature..."
+IF temperature > 80 THEN
+    PRINT "It's a hot day"
+    PRINT "Remember to drink water"
+END IF
+
+// Another example
+score = 92
+PRINT "\\nChecking score..."
+IF score >= 90 THEN
+    PRINT "Excellent work!"
+    PRINT "Score:", score
+END IF
+
+// Using variables in conditions
+minimum_age = 16
+person_age = 17
+PRINT "\\nChecking age requirement..."
+IF person_age >= minimum_age THEN
+    PRINT "Person meets the age requirement"
+END IF`,
+
+            "if-else": `// If...Then...Else Example
+// Chooses between two code blocks based on a condition
+
+// Simple if-else
+time = 14
+PRINT "Checking time of day..."
+IF time < 12 THEN
+    PRINT "Good morning!"
+ELSE
+    PRINT "Good afternoon!"
+END IF
+
+// Number comparison
+test_score = 75
+PRINT "\\nChecking test results..."
+IF test_score >= 60 THEN
+    PRINT "You passed the test"
+    PRINT "Score:", test_score
+ELSE
+    PRINT "You did not pass the test"
+    PRINT "Score:", test_score
+END IF
+
+// Nested if-else
+age = 20
+has_id = false
+PRINT "\\nChecking entry requirements..."
+IF age >= 18 THEN
+    PRINT "Age requirement met"
+    IF has_id THEN
+        PRINT "Entry granted"
+    ELSE
+        PRINT "Entry denied - no ID"
+    END IF
+ELSE
+    PRINT "Entry denied - too young"
+END IF`,
+
+            "for-loop": `// For Loop Example
+// Repeats code a specific number of times
+
+// Basic counting loop
+PRINT "Counting from 1 to 5:"
+FOR i FROM 1 TO 5
+    PRINT "Iteration", i
+END FOR
+
+// Loop with calculation
+sum = 0
+PRINT "\\nCalculating sum of 1-10:"
+FOR num FROM 1 TO 10
+    sum = sum + num
+    PRINT "Adding", num, "- Sum so far:", sum
+END FOR
+PRINT "Final sum:", sum
+
+// Using variables for loop range
+start = 2
+end = 6
+PRINT "\\nLoop from", start, "to", end, ":"
+FOR x FROM start TO end
+    PRINT "x =", x, "| x squared =", x * x
+END FOR`,
+
+            "while-loop": `// While Loop Example
+// Repeats code while a condition is true
+
+// Simple counting example
+count = 1
+PRINT "Starting WHILE loop test"
+WHILE count <= 3
+    PRINT "Loop iteration:", count
+    count = count + 1
+END WHILE
+PRINT "Loop completed, final count:", count
+
+// Counting down example
+number = 3
+PRINT "\\nCountdown example:"
+WHILE number > 0
+    PRINT "Number:", number
+    number = number - 1
+END WHILE
+PRINT "Countdown finished"
+
+// Accumulation example
+total = 0
+item = 1
+PRINT "\\nAccumulation example:"
+WHILE total < 10
+    total = total + item
+    PRINT "Added", item, "- Total now:", total
+    item = item + 1
+END WHILE
+PRINT "Final total:", total`,
+
+            "do-while": `// Do...While Loop Example
+// Executes code at least once, then continues while condition is true
+
+// Basic do-while
+count = 1
+PRINT "Basic do-while loop:"
+DO
+    PRINT "Count:", count
+    count = count + 1
+WHILE count <= 3
+PRINT "Loop finished. Final count:", count
+
+// Another example - runs at least once even if condition is false
+number = 10
+PRINT "\\nDo-while with false condition:"
+DO
+    PRINT "This runs at least once, number =", number
+    number = number + 1
+WHILE number < 5
+PRINT "Finished. Final number:", number
+`,
+
+            "repeat-until": `// Repeat...Until Loop Example
+// Executes code at least once, stops when condition becomes true
+
+// Basic repeat-until
+count = 1
+PRINT "Basic repeat-until loop:"
+REPEAT
+    PRINT "Count:", count
+    count = count + 1
+UNTIL count > 5  // Stop when count exceeds 5
+PRINT "Loop finished. Final count:", count
+
+// Accumulation example
+total = 0
+item = 1
+PRINT "\\nAccumulating total:"
+REPEAT
+    total = total + item
+    PRINT "Adding", item, "- Total:", total
+    item = item + 2  // Add odd numbers
+UNTIL total >= 30  // Stop when total is 30 or more
+PRINT "Final total:", total`,
+
+            comprehensive: `// Comprehensive Test - All Control Structures
+// This example tests all major pseudocode features
+
+// Variables and assignments
+x = 5
+y = 3
+PRINT "Starting comprehensive test"
+PRINT "Initial values: x =", x, "y =", y
+
+// IF...THEN...ELSE
+IF x > y THEN
+    PRINT "x is greater than y"
+    larger = x
+ELSE
+    PRINT "y is greater than or equal to x"
+    larger = y
+END IF
+PRINT "Larger value:", larger
+
+// FOR loop
+PRINT "\\nFOR loop counting 1 to 3:"
+FOR i FROM 1 TO 3
+    PRINT "FOR iteration:", i
+    product = i * x
+    PRINT "i * x =", product
+END FOR
+
+// WHILE loop
+PRINT "\\nWHILE loop countdown:"
+counter = 3
+WHILE counter > 0
+    PRINT "Counter:", counter
+    counter = counter - 1
+END WHILE
+PRINT "WHILE loop finished"
+
+// REPEAT...UNTIL loop
+PRINT "\\nREPEAT...UNTIL loop:"
+value = 1
+REPEAT
+    PRINT "Value:", value
+    value = value + 2
+UNTIL value > 5
+PRINT "REPEAT...UNTIL finished, final value:", value
+
+PRINT "\\nComprehensive test completed successfully!"`,
+
+            "while-debug": `// WHILE Loop Debug Test
+// Testing <= operator specifically
+
+count = 1
+PRINT "Testing count <= 3 with count =", count
+
+WHILE count <= 3
+    PRINT "Loop iteration:", count
+    count = count + 1
+END WHILE
+
+PRINT "Loop completed, final count:", count`
+        };
+
+        function initializeDropdown() {
+            const exampleBtn = document.getElementById('exampleBtn');
+            const exampleDropdown = document.getElementById('exampleDropdown');
+            const codeInput = document.getElementById('code-input');
+            
+            if (!exampleBtn || !exampleDropdown || !codeInput) {
+                console.error('Required elements not found for dropdown.');
+                return;
+            }
+            
+            exampleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                exampleDropdown.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', () => {
+                exampleDropdown.classList.add('hidden');
+            });
+            
+            exampleDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const exampleId = this.getAttribute('data-id');
+                    if (examples[exampleId]) {
+                        codeInput.value = examples[exampleId];
+                        exampleDropdown.classList.add('hidden');
+                        if (window.simulator) {
+                            window.simulator.resetSimulation();
+                        }
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDropdown();
+            window.simulator = new PseudocodeSimulator();
+        });
+
+        class PseudocodeSimulator {
+            constructor() {
+                this.codeInput = document.getElementById('code-input');
+                this.codeVisualization = document.getElementById('code-visualization');
+                this.outputConsole = document.getElementById('output-console');
+                this.variablesContainer = document.getElementById('variables-container');
+                this.runBtn = document.getElementById('run-btn');
+                this.stepBtn = document.getElementById('step-btn');
+                this.resetBtn = document.getElementById('reset-btn');
+                this.clearCodeBtn = document.getElementById('clear-code');
+                this.loopStack = [];
+                this.resetSimulation();
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                this.runBtn.addEventListener('click', () => this.startExecution(false));
+                this.stepBtn.addEventListener('click', () => this.startExecution(true));
+                this.resetBtn.addEventListener('click', () => this.resetSimulation());
+                this.clearCodeBtn.addEventListener('click', () => this.clearCode());
+            }
+            
+            clearCode() {
+                this.codeInput.value = '';
+                this.resetSimulation();
+            }
+
+            resetSimulation() {
+                this.variables = {};
+                this.lines = [];
+                this.currentLine = 0;
+                this.isRunning = false;
+                this.isStepping = false;
+                this.loopStack = [];
+                if (this.executionInterval) {
+                    clearInterval(this.executionInterval);
+                    this.executionInterval = null;
+                }
+                this.codeVisualization.innerHTML = `<div class="text-gray-500 dark:text-gray-400 text-center py-8">Code will appear here during execution</div>`;
+                this.outputConsole.innerHTML = `<div class="text-gray-500 dark:text-gray-400 italic">Output will appear here...</div>`;
+                this.updateVariablesDisplay();
+                this.runBtn.disabled = false;
+                this.stepBtn.disabled = false;
+                this.resetBtn.disabled = true;
+            }
+
+            startExecution(isStepping) {
+                if (!this.isRunning) {
+                    this.lines = this.codeInput.value.split('\n').map(line => line.trim()).filter(line => line.length > 0 && !line.startsWith('//'));
+                    if (this.lines.length === 0) {
+                        this.printOutput("No code to execute.", "error");
+                        return;
+                    }
+                    this.prepareCodeVisualization();
+                    this.isRunning = true;
+                    this.resetBtn.disabled = false;
+                    this.runBtn.disabled = true;
+                    this.stepBtn.disabled = true;
+                }
+                this.isStepping = isStepping;
+
+                if (isStepping) {
+                    this.executeStep();
+                    this.stepBtn.disabled = false;
+                } else {
+                    this.runBtn.disabled = true;
+                    this.executionInterval = setInterval(() => this.executeStep(), 400);
+                }
+            }
+            
+            prepareCodeVisualization() {
+                this.codeVisualization.innerHTML = '';
+                this.lines.forEach((line, index) => {
+                    const lineElement = document.createElement('div');
+                    lineElement.className = 'code-line';
+                    lineElement.dataset.line = index;
+                    lineElement.textContent = line;
+                    this.codeVisualization.appendChild(lineElement);
+                });
+            }
+
+            executeStep() {
+                if (this.currentLine >= this.lines.length) {
+                    this.endExecution();
+                    return;
+                }
+
+                this.highlightCurrentLine();
+                const line = this.lines[this.currentLine];
+                
+                try {
+                    this.executeLine(line);
+                } catch (e) {
+                    this.printOutput(`Error: ${e.message}`, 'error');
+                    this.endExecution();
+                    return;
+                }
+
+                this.updateVariablesDisplay();
+                if (this.currentLine >= this.lines.length) {
+                    this.endExecution();
+                }
+            }
+
+            endExecution() {
+                if (this.executionInterval) clearInterval(this.executionInterval);
+                this.isRunning = false;
+                this.runBtn.disabled = false;
+                this.stepBtn.disabled = this.isStepping;
+                this.printOutput('Execution completed!', 'info');
+                document.querySelectorAll('.code-line.active').forEach(el => el.classList.remove('active'));
+            }
+
+            highlightCurrentLine() {
+                document.querySelectorAll('.code-line.active').forEach(el => el.classList.remove('active'));
+                const lineEl = document.querySelector(`.code-line[data-line="${this.currentLine}"]`);
+                if (lineEl) {
+                    lineEl.classList.add('active');
+                    lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            executeLine(line) {
+                let advance = true;
+                const upperLine = line.toUpperCase();
+
+                if (upperLine.startsWith('PRINT')) {
+                    this.handlePrint(line.substring(5).trim());
+                } else if (upperLine.startsWith('INPUT')) {
+                    this.handleInput(line);
+                } else if (upperLine.startsWith('IF')) {
+                    const condition = line.match(/IF\s+(.+)\s+THEN/i)[1];
+                    if (!this.evaluateCondition(condition)) {
+                        this.currentLine = this.findBlockEnd(['ELSE', 'END IF']);
+                        advance = false;
+                    }
+                } else if (upperLine.startsWith('ELSE')) {
+                    this.currentLine = this.findBlockEnd(['END IF']);
+                    advance = false;
+                } else if (upperLine.startsWith('FOR')) {
+                    const match = line.match(/FOR\s+(\w+)\s+FROM\s+(.+)\s+TO\s+(.+)/i);
+                    const [, varName, start, end] = match;
+                    const loop = this.loopStack[this.loopStack.length-1];
+                    if (!loop || loop.line !== this.currentLine) {
+                        this.variables[varName] = this.evaluateExpression(start);
+                        this.loopStack.push({ type: 'FOR', line: this.currentLine, var: varName, end: this.evaluateExpression(end) });
+                    }
+                    if (this.variables[varName] > this.loopStack[this.loopStack.length-1].end) {
+                        this.currentLine = this.findBlockEnd(['END FOR']);
+                        this.loopStack.pop();
+                    }
+                } else if (upperLine.startsWith('END FOR')) {
+                    const loop = this.loopStack[this.loopStack.length-1];
+                    this.variables[loop.var]++;
+                    this.currentLine = loop.line;
+                    advance = false;
+                } else if (upperLine.startsWith('WHILE')) {
+                    const condition = line.match(/WHILE\s+(.+)/i)[1];
+                     // Check if it is a DO...WHILE structure
+                    const doLoop = this.loopStack.length > 0 && this.loopStack[this.loopStack.length - 1].type === 'DO' 
+                        ? this.loopStack[this.loopStack.length - 1] : null;
+                    if (doLoop) {
+                        // This is a DO...WHILE loop - test condition and decide whether to continue
+                        if (this.evaluateCondition(condition)) {
+                             this.currentLine = doLoop.line + 1; // Go back to line after DO
+                             advance = false;
+                        } else {
+                             this.loopStack.pop(); // End of DO...WHILE loop
+                        }
+                    } else { // Standard WHILE...END WHILE loop
+                        if (!this.evaluateCondition(condition)) {
+                            this.currentLine = this.findBlockEnd(['END WHILE']);
+                        }
+                    }
+                } else if (upperLine.startsWith('END WHILE')) {
+                    const whileLine = this.findMatchingStart('WHILE');
+                    this.currentLine = whileLine;
+                    advance = false;
+                } else if (upperLine.startsWith('REPEAT')) {
+                     this.loopStack.push({ type: 'REPEAT', line: this.currentLine });
+                } else if (upperLine.startsWith('UNTIL')) {
+                    const condition = line.match(/UNTIL\s+(.+)/i)[1];
+                    const loop = this.loopStack[this.loopStack.length-1];
+                    if (!this.evaluateCondition(condition)) {
+                        this.currentLine = loop.line;
+                        advance = false;
+                    } else {
+                        this.loopStack.pop();
+                    }
+                } else if (upperLine.startsWith('DO')) {
+                    this.loopStack.push({ type: 'DO', line: this.currentLine });
+                } else if (line.includes('=')) {
+                    const [varName, expr] = line.split('=').map(s => s.trim());
+                    this.variables[varName] = this.evaluateExpression(expr);
+                } else if (['END IF'].includes(upperLine)) {
+                    // This is just a marker, continue
+                }
+                
+                if (advance) this.currentLine++;
+            }
+
+            findBlockEnd(endKeywords) {
+                let depth = 1;
+                let lineNum = this.currentLine + 1;
+                const startKeyword = this.lines[this.currentLine].split(' ')[0].toUpperCase();
+
+                while (lineNum < this.lines.length) {
+                    const currentLine = this.lines[lineNum].toUpperCase();
+                    if (currentLine.startsWith(startKeyword)) depth++;
+                    if (endKeywords.some(kw => currentLine.startsWith(kw))) {
+                        if (currentLine.startsWith('END')) depth--;
+                        if (depth === 0) return lineNum;
+                    }
+                    lineNum++;
+                }
+                throw new Error(`Unmatched ${startKeyword} statement.`);
+            }
+
+            findMatchingStart(startKeyword) {
+                 let depth = 1;
+                 let lineNum = this.currentLine - 1;
+                 const endKeyword = this.lines[this.currentLine].split(' ')[0].toUpperCase();
+                 while(lineNum >= 0) {
+                     const line = this.lines[lineNum].toUpperCase();
+                     if (line.startsWith(endKeyword)) depth++;
+                     if (line.startsWith(startKeyword)) depth--;
+                     if(depth === 0) return lineNum;
+                     lineNum--;
+                 }
+                 throw new Error(`Unmatched ${endKeyword} statement.`);
+            }
+
+            evaluateExpression(expr) {
+                let processedExpr = expr.toString();
+                Object.keys(this.variables).sort((a, b) => b.length - a.length).forEach(v => {
+                    const value = this.variables[v];
+                    const replacement = typeof value === 'string' ? `"${value}"` : value;
+                    processedExpr = processedExpr.replace(new RegExp(`\\b${v}\\b`, 'g'), replacement);
+                });
+
+                try {
+                    return new Function(`return ${processedExpr}`)();
+                } catch (e) {
+                    throw new Error(`Invalid expression: ${expr}`);
+                }
+            }
+            
+            evaluateCondition(condition) {
+                const operators = ['<=', '>=', '==', '!=', '<', '>'];
+                const operator = operators.find(op => condition.includes(op));
+                if (!operator) throw new Error(`Invalid condition: ${condition}`);
+                const [left, right] = condition.split(operator).map(s => s.trim());
+                const leftVal = this.evaluateExpression(left);
+                const rightVal = this.evaluateExpression(right);
+
+                switch (operator) {
+                    case '>': return leftVal > rightVal;
+                    case '<': return leftVal < rightVal;
+                    case '>=': return leftVal >= rightVal;
+                    case '<=': return leftVal <= rightVal;
+                    case '==': return leftVal == rightVal;
+                    case '!=': return leftVal != rightVal;
+                    default: return false;
+                }
+            }
+
+            handlePrint(content) {
+                let output = '';
+                const parts = content.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [content];
+                parts.forEach(part => {
+                    part = part.trim();
+                    if (part.startsWith('"') && part.endsWith('"')) {
+                        output += part.slice(1, -1).replace(/\\n/g, '\n');
+                    } else {
+                        output += this.evaluateExpression(part);
+                    }
+                });
+                this.printOutput(output);
+            }
+            
+            handleInput(line) {
+                 const match = line.match(/INPUT\s+"([^"]+)"\s*,\s*(\w+)/i);
+                 if (match) {
+                     const [, promptMessage, varName] = match;
+                     const userInput = prompt(promptMessage);
+                     if (userInput !== null) {
+                         this.variables[varName] = isNaN(userInput) || userInput === '' ? userInput : parseFloat(userInput);
+                     } else {
+                         this.printOutput('Input cancelled.', 'info');
+                     }
+                 } else {
+                    throw new Error('Invalid INPUT format.');
+                 }
+            }
+
+            printOutput(message, type = 'log') {
+                if (this.outputConsole.querySelector('.italic')) {
+                    this.outputConsole.innerHTML = '';
+                }
+                const msgEl = document.createElement('div');
+                msgEl.textContent = message;
+                if (type === 'error') msgEl.className = 'text-red-500';
+                if (type === 'info') msgEl.className = 'text-blue-400 italic';
+                this.outputConsole.appendChild(msgEl);
+                this.outputConsole.scrollTop = this.outputConsole.scrollHeight;
+            }
+
+            updateVariablesDisplay() {
+                const vars = Object.keys(this.variables);
+                if (vars.length === 0) {
+                    this.variablesContainer.innerHTML = `<div class="text-gray-500 dark:text-gray-400 text-center py-4">No variables yet</div>`;
+                    return;
+                }
+                this.variablesContainer.innerHTML = '';
+                vars.forEach(v => {
+                    const varEl = document.createElement('div');
+                    varEl.className = 'py-1 font-mono text-sm';
+                    let value = this.variables[v];
+                    if(typeof value === 'string') value = `"${value}"`;
+                    varEl.innerHTML = `<span class="font-semibold text-accent">${v}</span> = <span class="text-secondary">${value}</span>`;
+                    this.variablesContainer.appendChild(varEl);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
