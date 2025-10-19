@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Flowchart Demonstration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                    },
+                    fontFamily: {
+                        mono: ['Consolas', 'Monaco', 'Courier New', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .flowchart-container {
+            position: relative;
+            width: 100%;
+            height: auto;
+            min-height: 500px;
+            overflow: visible;
+        }
+        
+        .main-content {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .flowchart-node {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .node-start, .node-end {
+            background: #A7E6D7;
+            border-radius: 50px;
+            width: 120px;
+            height: 60px;
+        }
+        
+        .node-process {
+            background: #87CEEB;
+            border-radius: 8px;
+            width: 140px;
+            height: 60px;
+        }
+        
+        .node-input, .node-output {
+            background: #F4C2A1;
+            width: 140px;
+            height: 60px;
+            transform: skew(-20deg);
+            border-radius: 4px;
+        }
+        
+        .node-input span, .node-output span {
+            transform: skew(20deg);
+        }
+        
+        .node-decision {
+            background: #F4A5A5;
+            width: 100px;
+            height: 100px;
+            transform: rotate(45deg);
+            border-radius: 8px;
+        }
+        
+        .node-decision span {
+            transform: rotate(-45deg);
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        .flowchart-line {
+            position: absolute;
+            background: #333;
+        }
+        
+        .line-vertical {
+            width: 2px;
+        }
+        
+        .line-horizontal {
+            height: 2px;
+        }
+        
+        .flowchart-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 10px solid #333;
+        }
+        
+        .arrow-right {
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 10px solid #333;
+            border-right: none;
+        }
+        
+        .arrow-left {
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 10px solid #333;
+            border-left: none;
+        }
+        
+        .path-label {
+            position: absolute;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .label-yes {
+            background: #90EE90;
+            color: #006400;
+        }
+        
+        .label-no {
+            background: #FFB6C1;
+            color: #8B0000;
+        }
+        
+        .node-highlight {
+            box-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700;
+            transform: scale(1.08);
+            z-index: 10;
+            border: 3px solid #FFD700 !important;
+            animation: pulse 0.6s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+            100% { transform: scale(1.08); }
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        
+        .legend-shape {
+            width: 40px;
+            height: 25px;
+            margin-right: 10px;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        
+        .legend-oval {
+            background: #A7E6D7;
+            border-radius: 25px;
+        }
+        
+        .legend-rect {
+            background: #87CEEB;
+            border-radius: 4px;
+        }
+        
+        .legend-diamond {
+            background: #F4A5A5;
+            transform: rotate(45deg);
+            border-radius: 4px;
+        }
+        
+        .legend-para {
+            background: #F4C2A1;
+            transform: skew(-20deg);
+            border-radius: 2px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .flowchart-node {
+                font-size: 11px !important;
+                padding: 4px 6px !important;
+            }
+            
+            .flowchart-node.decision {
+                font-size: 10px !important;
+            }
+            
+            .algorithm-btn {
+                padding: 8px 12px !important;
+                font-size: 14px !important;
+            }
+            
+            .path-label {
+                font-size: 10px !important;
+            }
+            
+            .bg-white.rounded-lg.shadow {
+                padding: 12px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .flowchart-node {
+                font-size: 10px !important;
+                padding: 3px 5px !important;
+            }
+            
+            .algorithm-btn {
+                padding: 6px 10px !important;
+                font-size: 13px !important;
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1320px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-md py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="index.html" class="text-blue-600 hover:text-blue-800 mr-4 flex items-center">
+                    <i class="fa fa-home mr-2"></i>Home
+                </a>
+                <h1 class="text-2xl font-bold text-primary flex items-center">
+                    <i class="fa fa-sitemap mr-3"></i>
+                    Algorithm Flowcharts
+                </h1>
+            </div>
+            <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <i class="fa fa-moon-o dark:hidden"></i>
+                <i class="fa fa-sun-o hidden dark:block"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 main-content max-w-full">
+        <!-- Introduction -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Understanding Algorithm Flowcharts</h2>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+                Flowcharts are visual representations of algorithms that use standardized symbols to show the flow of logic and decision-making in a program.
+            </p>
+            
+            <!-- Flowchart Symbols Legend -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="legend-item p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <div class="legend-shape legend-oval"></div>
+                    <span class="text-sm">Start/End (Terminal)</span>
+                </div>
+                <div class="legend-item p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <div class="legend-shape legend-rect"></div>
+                    <span class="text-sm">Process</span>
+                </div>
+                <div class="legend-item p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <div class="legend-shape legend-diamond"></div>
+                    <span class="text-sm">Decision</span>
+                </div>
+                <div class="legend-item p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <div class="legend-shape legend-para"></div>
+                    <span class="text-sm">Input/Output</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <!-- Algorithm Selection (Left Side) -->
+            <div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+                    <h2 class="text-lg font-semibold mb-3">Choose an Algorithm</h2>
+                    <div class="space-y-2">
+                        <button class="algorithm-btn w-full text-left p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded transition-colors" data-algorithm="grade-check">
+                            <i class="fa fa-graduation-cap mr-2 text-blue-600"></i>
+                            <strong>Grade Check</strong> - Pass/Fail determination based on marks
+                        </button>
+                        <button class="algorithm-btn w-full text-left p-3 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 rounded transition-colors" data-algorithm="number-positive">
+                            <i class="fa fa-question-circle mr-2 text-green-600"></i>
+                            <strong>Number Type</strong> - Positive, negative, or zero check
+                        </button>
+                        <button class="algorithm-btn w-full text-left p-3 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 rounded transition-colors" data-algorithm="simple-loop">
+                            <i class="fa fa-repeat mr-2 text-purple-600"></i>
+                            <strong>Simple Loop</strong> - Basic counting loop demonstration
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+                    <h2 class="text-lg font-semibold mb-3">Animation Controls</h2>
+                    <div class="flex flex-wrap gap-3">
+                        <button id="start-btn" class="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/90 transition-colors flex items-center" disabled>
+                            <i class="fa fa-play mr-2"></i> Start Animation
+                        </button>
+                        <button id="step-btn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center" disabled>
+                            <i class="fa fa-step-forward mr-2"></i> Step by Step
+                        </button>
+                        <button id="reset-btn" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors flex items-center" disabled>
+                            <i class="fa fa-refresh mr-2"></i> Reset
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <label class="flex items-center space-x-2">
+                            <input type="range" id="speed-slider" min="500" max="3000" value="1500" class="flex-1">
+                            <span class="text-sm">Speed</span>
+                        </label>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Select an algorithm to enable controls. Use <strong>Start Animation</strong> for automatic execution or <strong>Step by Step</strong> to manually walk through each step.
+                        </p>
+                        <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                            💡 Tip: Click "Step by Step" multiple times to advance through each flowchart step individually.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Interactive Testing -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+                    <h2 class="text-lg font-semibold mb-3">
+                        <i class="fa fa-edit mr-2 text-blue-600"></i>Interactive Testing
+                    </h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Enter custom values to test different scenarios with the selected algorithm.
+                    </p>
+                    <div id="interactive-inputs" class="space-y-3">
+                        <div class="text-gray-500 dark:text-gray-400 text-center py-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                            <i class="fa fa-hand-pointer-o text-2xl mb-2"></i>
+                            <p>Select an algorithm to see input options</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Algorithm Description -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <h2 class="text-lg font-semibold mb-3">Algorithm Description</h2>
+                    <div id="algorithm-description" class="text-gray-600 dark:text-gray-400">
+                        Select an algorithm to see its description and flowchart visualization.
+                    </div>
+                </div>
+            </div>
+
+            </div>
+
+            <!-- Flowchart Visualization (Right Side) -->
+            <div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+                    <h2 class="text-lg font-semibold mb-3">Flowchart Visualization</h2>
+                    <div id="flowchart-container" class="min-h-[500px] w-full overflow-visible bg-gray-50 dark:bg-gray-900 rounded p-4 sm:p-6 flex items-center justify-center">
+                        <div class="text-gray-500 dark:text-gray-400 text-center">
+                            <i class="fa fa-sitemap text-4xl mb-4"></i>
+                            <p>Select an algorithm to view its flowchart</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <h2 class="text-lg font-semibold mb-3">Execution Log</h2>
+                    <div id="execution-log" class="h-40 overflow-y-auto bg-gray-50 dark:bg-gray-900 rounded p-3 font-mono text-sm">
+                        <div class="text-gray-500 dark:text-gray-400 italic">
+                            Execution steps will appear here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        });
+
+        // Algorithm definitions with precise positioning
+        const algorithms = {
+            "grade-check": {
+                title: "Grade Pass/Fail Check",
+                description: "This algorithm checks if a student's mark is passing (>=50) or failing (<50), similar to the provided example.",
+                nodes: [
+                    { id: 'start', type: 'start', text: 'Start', x: 300, y: 50 },
+                    { id: 'input', type: 'input', text: 'Input mark', x: 300, y: 140 },
+                    { id: 'decision', type: 'decision', text: 'mark >= 50', x: 300, y: 250 },
+                    { id: 'pass', type: 'process', text: 'grade = "Pass"', x: 500, y: 360 },
+                    { id: 'fail', type: 'process', text: 'grade = "Fail"', x: 100, y: 360 },
+                    { id: 'output', type: 'output', text: 'Output grade', x: 300, y: 470 },
+                    { id: 'end', type: 'end', text: 'End', x: 300, y: 560 }
+                ],
+                connections: [
+                    { from: 'start', to: 'input', type: 'normal' },
+                    { from: 'input', to: 'decision', type: 'normal' },
+                    { from: 'decision', to: 'pass', type: 'yes' },
+                    { from: 'decision', to: 'fail', type: 'no' },
+                    { from: 'pass', to: 'output', type: 'converge' },
+                    { from: 'fail', to: 'output', type: 'converge' },
+                    { from: 'output', to: 'end', type: 'normal' }
+                ],
+                testCase: { mark: 75 }
+            },
+            "number-positive": {
+                title: "Positive/Negative Number Check",
+                description: "Determines if a number is positive, negative, or zero using nested decisions.",
+                nodes: [
+                    { id: 'start', type: 'start', text: 'Start', x: 300, y: 50 },
+                    { id: 'input', type: 'input', text: 'Input number', x: 300, y: 140 },
+                    { id: 'check-pos', type: 'decision', text: 'number > 0', x: 300, y: 250 },
+                    { id: 'positive', type: 'output', text: 'Output "Positive"', x: 500, y: 360 },
+                    { id: 'check-zero', type: 'decision', text: 'number = 0', x: 100, y: 360 },
+                    { id: 'zero', type: 'output', text: 'Output "Zero"', x: 100, y: 470 },
+                    { id: 'negative', type: 'output', text: 'Output "Negative"', x: 300, y: 470 },
+                    { id: 'end', type: 'end', text: 'End', x: 300, y: 580 }
+                ],
+                connections: [
+                    { from: 'start', to: 'input', type: 'normal' },
+                    { from: 'input', to: 'check-pos', type: 'normal' },
+                    { from: 'check-pos', to: 'positive', type: 'yes' },
+                    { from: 'check-pos', to: 'check-zero', type: 'no' },
+                    { from: 'check-zero', to: 'zero', type: 'yes' },
+                    { from: 'check-zero', to: 'negative', type: 'no' },
+                    { from: 'positive', to: 'end', type: 'converge' },
+                    { from: 'zero', to: 'end', type: 'converge' },
+                    { from: 'negative', to: 'end', type: 'converge' }
+                ],
+                testCase: { number: -5 }
+            },
+            "simple-loop": {
+                title: "Simple Counter Loop",
+                description: "A basic loop that counts from 1 to 5, demonstrating loop structure with initialization, condition, and increment.",
+                nodes: [
+                    { id: 'start', type: 'start', text: 'Start', x: 300, y: 50 },
+                    { id: 'init', type: 'process', text: 'counter = 1', x: 300, y: 140 },
+                    { id: 'check', type: 'decision', text: 'counter <= 5', x: 300, y: 250 },
+                    { id: 'output', type: 'output', text: 'Output counter', x: 500, y: 360 },
+                    { id: 'increment', type: 'process', text: 'counter = counter + 1', x: 500, y: 470 },
+                    { id: 'end', type: 'end', text: 'End', x: 100, y: 360 }
+                ],
+                connections: [
+                    { from: 'start', to: 'init', type: 'normal' },
+                    { from: 'init', to: 'check', type: 'normal' },
+                    { from: 'check', to: 'output', type: 'yes' },
+                    { from: 'check', to: 'end', type: 'no' },
+                    { from: 'output', to: 'increment', type: 'normal' },
+                    { from: 'increment', to: 'check', type: 'loop-back' }
+                ],
+                testCase: { limit: 5 }
+            }
+        };
+
+        class FlowchartDemo {
+            constructor() {
+                this.currentAlgorithm = null;
+                this.currentNode = null;
+                this.isRunning = false;
+                this.animationInterval = null;
+                this.executionPath = [];
+                this.variables = {};
+                this.waitingForInput = false;
+                
+                this.bindEvents();
+                
+                // Add resize listener for responsive behavior
+                window.addEventListener('resize', () => {
+                    if (this.currentAlgorithm) {
+                        clearTimeout(this.resizeTimeout);
+                        this.resizeTimeout = setTimeout(() => {
+                            this.renderFlowchart();
+                        }, 250); // Debounce resize events
+                    }
+                });
+            }
+
+            bindEvents() {
+                document.querySelectorAll('.algorithm-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.selectAlgorithm(btn.dataset.algorithm);
+                    });
+                });
+
+                document.getElementById('start-btn').addEventListener('click', () => this.startAnimation());
+                
+                const stepBtn = document.getElementById('step-btn');
+                if (stepBtn) {
+                    stepBtn.addEventListener('click', () => {
+                        console.log('Step button event fired');
+                        this.stepExecution();
+                    });
+                } else {
+                    console.error('Step button not found!');
+                }
+                
+                document.getElementById('reset-btn').addEventListener('click', () => this.resetAnimation());
+            }
+
+            selectAlgorithm(algorithmKey) {
+                this.currentAlgorithm = algorithms[algorithmKey];
+                this.resetAnimation();
+                this.displayAlgorithmInfo();
+                this.renderFlowchart();
+                
+                // Enable controls
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('step-btn').disabled = false;
+                document.getElementById('reset-btn').disabled = true;
+                
+                // Update UI to show selected algorithm
+                document.querySelectorAll('.algorithm-btn').forEach(btn => {
+                    btn.classList.remove('ring-2', 'ring-blue-500');
+                });
+                document.querySelector(`[data-algorithm="${algorithmKey}"]`).classList.add('ring-2', 'ring-blue-500');
+            }
+
+            displayAlgorithmInfo() {
+                const descElement = document.getElementById('algorithm-description');
+                descElement.innerHTML = `
+                    <h3 class="font-semibold text-lg mb-2">${this.currentAlgorithm.title}</h3>
+                    <p class="mb-4">${this.currentAlgorithm.description}</p>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                        <strong>Current Test Values:</strong> ${JSON.stringify(this.currentAlgorithm.testCase)}
+                    </div>
+                `;
+                
+                // Display interactive inputs
+                this.displayInteractiveInputs();
+            }
+
+            displayInteractiveInputs() {
+                const inputsElement = document.getElementById('interactive-inputs');
+                
+                switch (this.currentAlgorithm.title) {
+                    case 'Grade Pass/Fail Check':
+                        inputsElement.innerHTML = `
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-3">
+                                    <i class="fa fa-graduation-cap mr-2"></i>Test Different Marks
+                                </h4>
+                                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                    <label class="font-medium text-gray-700 dark:text-gray-300">Enter Mark (0-100):</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" id="mark-input" min="0" max="100" value="${this.currentAlgorithm.testCase.mark}" 
+                                               class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white w-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <button id="update-mark-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center">
+                                            <i class="fa fa-refresh mr-2"></i>Update & Test
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                    Try values like: 45 (fail), 50 (pass), 85 (pass)
+                                </div>
+                            </div>
+                        `;
+                        this.bindMarkInput();
+                        break;
+                        
+                    case 'Positive/Negative Number Check':
+                        inputsElement.innerHTML = `
+                            <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                                <h4 class="font-semibold text-green-800 dark:text-green-200 mb-3">
+                                    <i class="fa fa-calculator mr-2"></i>Test Different Numbers
+                                </h4>
+                                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                    <label class="font-medium text-gray-700 dark:text-gray-300">Enter Number:</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" id="number-input" value="${this.currentAlgorithm.testCase.number}" 
+                                               class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white w-32 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                        <button id="update-number-btn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center">
+                                            <i class="fa fa-refresh mr-2"></i>Update & Test
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                    Try values like: -10 (negative), 0 (zero), 25 (positive)
+                                </div>
+                            </div>
+                        `;
+                        this.bindNumberInput();
+                        break;
+                        
+                    case 'Simple Counter Loop':
+                        inputsElement.innerHTML = `
+                            <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                                <h4 class="font-semibold text-purple-800 dark:text-purple-200 mb-3">
+                                    <i class="fa fa-repeat mr-2"></i>Test Different Loop Limits
+                                </h4>
+                                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                    <label class="font-medium text-gray-700 dark:text-gray-300">Counter Limit (1-10):</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" id="limit-input" min="1" max="10" value="${this.currentAlgorithm.testCase.limit}" 
+                                               class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white w-24 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                        <button id="update-limit-btn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center">
+                                            <i class="fa fa-refresh mr-2"></i>Update & Test
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                    Try values like: 3 (short loop), 5 (default), 8 (longer loop)
+                                </div>
+                            </div>
+                        `;
+                        this.bindLimitInput();
+                        break;
+                        
+                    default:
+                        inputsElement.innerHTML = `
+                            <div class="text-gray-500 dark:text-gray-400 text-center py-4">
+                                No interactive inputs for this algorithm
+                            </div>
+                        `;
+                }
+            }
+
+            calculateFlowchartBounds() {
+                if (!this.currentAlgorithm || !this.currentAlgorithm.nodes) {
+                    return { width: 400, height: 300 };
+                }
+                
+                let minX = Infinity, maxX = -Infinity;
+                let minY = Infinity, maxY = -Infinity;
+                
+                this.currentAlgorithm.nodes.forEach(node => {
+                    // Calculate node boundaries based on type
+                    let nodeWidth, nodeHeight;
+                    switch (node.type) {
+                        case 'start':
+                        case 'end':
+                            nodeWidth = 120;
+                            nodeHeight = 60;
+                            break;
+                        case 'decision':
+                            nodeWidth = 100;
+                            nodeHeight = 100;
+                            break;
+                        case 'process':
+                        case 'input':
+                        case 'output':
+                            nodeWidth = 140;
+                            nodeHeight = 60;
+                            break;
+                        default:
+                            nodeWidth = 140;
+                            nodeHeight = 60;
+                    }
+                    
+                    const nodeLeft = node.x - nodeWidth / 2;
+                    const nodeRight = node.x + nodeWidth / 2;
+                    const nodeTop = node.y - nodeHeight / 2;
+                    const nodeBottom = node.y + nodeHeight / 2;
+                    
+                    minX = Math.min(minX, nodeLeft);
+                    maxX = Math.max(maxX, nodeRight);
+                    minY = Math.min(minY, nodeTop);
+                    maxY = Math.max(maxY, nodeBottom);
+                });
+                
+                return {
+                    width: maxX - minX,
+                    height: maxY - minY
+                };
+            }
+
+            renderFlowchart() {
+                const container = document.getElementById('flowchart-container');
+                if (!container) {
+                    console.error('Flowchart container not found!');
+                    return;
+                }
+                
+                if (!this.currentAlgorithm) {
+                    console.error('No algorithm selected!');
+                    return;
+                }
+                
+                console.log('Rendering flowchart for:', this.currentAlgorithm.title);
+                container.innerHTML = '';
+                
+                // Calculate flowchart dimensions
+                const bounds = this.calculateFlowchartBounds();
+                console.log('Calculated bounds:', bounds);
+                const viewportWidth = window.innerWidth;
+                const isMobile = viewportWidth < 640; // sm breakpoint
+                const isTablet = viewportWidth < 1024; // lg breakpoint
+                
+                // Responsive padding and scaling
+                const padding = isMobile ? 60 : 100;
+                const baseWidth = bounds.width + padding;
+                const maxWidth = isMobile ? viewportWidth - 40 : (isTablet ? viewportWidth * 0.95 : Math.max(600, baseWidth));
+                const containerHeight = Math.max(500, bounds.height + padding);
+                const containerWidth = Math.min(maxWidth, Math.max(600, baseWidth));
+                
+                container.className = `overflow-visible bg-gray-50 dark:bg-gray-900 rounded p-2 sm:p-4`;
+                container.style.position = 'relative';
+                container.style.height = `${containerHeight}px`;
+                container.style.width = '100%';
+                container.style.maxWidth = `${Math.max(300, containerWidth)}px`;
+                container.style.margin = '0 auto';
+                container.style.display = 'block'; // Remove flex centering
+                console.log('Container setup complete. Height:', containerHeight, 'Width:', containerWidth);
+                
+                // Create flowchart container with responsive scaling
+                const flowchartDiv = document.createElement('div');
+                flowchartDiv.className = 'flowchart-container';
+                flowchartDiv.style.width = '100%';
+                flowchartDiv.style.height = `${containerHeight - (isMobile ? 16 : 32)}px`; // Account for padding
+                flowchartDiv.style.position = 'relative';
+                flowchartDiv.style.overflow = 'visible';
+                
+                // Apply responsive scaling
+                if (isMobile && bounds.width > viewportWidth - 80) {
+                    const scale = (viewportWidth - 80) / bounds.width;
+                    flowchartDiv.style.transform = `scale(${Math.min(scale, 1)})`;
+                    flowchartDiv.style.transformOrigin = 'center center';
+                }
+                
+                // Render nodes
+                console.log('Rendering nodes:', this.currentAlgorithm.nodes.length);
+                this.currentAlgorithm.nodes.forEach(node => {
+                    this.createNode(flowchartDiv, node);
+                });
+                
+                // Render connections
+                console.log('Rendering connections:', this.currentAlgorithm.connections.length);
+                this.currentAlgorithm.connections.forEach(conn => {
+                    this.createConnection(flowchartDiv, conn);
+                });
+                
+                container.appendChild(flowchartDiv);
+                console.log('Flowchart rendered successfully. Container children:', container.children.length);
+            }
+
+            createNode(container, node) {
+                const nodeEl = document.createElement('div');
+                nodeEl.className = `flowchart-node node-${node.type}`;
+                nodeEl.style.left = `${node.x - 70}px`; // Center the node
+                nodeEl.style.top = `${node.y}px`;
+                nodeEl.id = `node-${node.id}`;
+                
+                const textEl = document.createElement('span');
+                textEl.textContent = node.text;
+                nodeEl.appendChild(textEl);
+                
+                container.appendChild(nodeEl);
+            }
+
+            createConnection(container, connection) {
+                const fromNode = this.getNodeById(connection.from);
+                const toNode = this.getNodeById(connection.to);
+                
+                if (!fromNode || !toNode) return;
+                
+                const fromX = fromNode.x;
+                const fromY = fromNode.y + 30; // Bottom of from node
+                const toX = toNode.x;
+                const toY = toNode.y - 5; // Top of to node
+                
+                switch (connection.type) {
+                    case 'normal':
+                        this.drawStraightLine(container, fromX, fromY, toX, toY);
+                        break;
+                    case 'yes':
+                        this.drawBranchLine(container, fromX, fromY, toX, toY, 'Yes');
+                        break;
+                    case 'no':
+                        this.drawBranchLine(container, fromX, fromY, toX, toY, 'No');
+                        break;
+                    case 'converge':
+                        this.drawConvergeLine(container, fromX, fromY, toX, toY);
+                        break;
+                    case 'loop-back':
+                        this.drawLoopBackLine(container, fromX, fromY, toX, toY);
+                        break;
+                }
+            }
+
+            drawStraightLine(container, fromX, fromY, toX, toY) {
+                // Vertical line
+                const line = document.createElement('div');
+                line.className = 'flowchart-line line-vertical';
+                line.style.left = `${fromX}px`;
+                line.style.top = `${fromY}px`;
+                line.style.height = `${toY - fromY}px`;
+                container.appendChild(line);
+                
+                // Arrow
+                this.addArrow(container, toX, toY, 'down');
+            }
+
+            drawBranchLine(container, fromX, fromY, toX, toY, label) {
+                const midY = fromY + 30;
+                
+                // Vertical line down from decision
+                const vertLine1 = document.createElement('div');
+                vertLine1.className = 'flowchart-line line-vertical';
+                vertLine1.style.left = `${fromX}px`;
+                vertLine1.style.top = `${fromY}px`;
+                vertLine1.style.height = '30px';
+                container.appendChild(vertLine1);
+                
+                // Horizontal line
+                const horizLine = document.createElement('div');
+                horizLine.className = 'flowchart-line line-horizontal';
+                horizLine.style.top = `${midY}px`;
+                if (toX > fromX) {
+                    horizLine.style.left = `${fromX}px`;
+                    horizLine.style.width = `${toX - fromX}px`;
+                } else {
+                    horizLine.style.left = `${toX}px`;
+                    horizLine.style.width = `${fromX - toX}px`;
+                }
+                container.appendChild(horizLine);
+                
+                // Vertical line to target
+                const vertLine2 = document.createElement('div');
+                vertLine2.className = 'flowchart-line line-vertical';
+                vertLine2.style.left = `${toX}px`;
+                vertLine2.style.top = `${midY}px`;
+                vertLine2.style.height = `${toY - midY}px`;
+                container.appendChild(vertLine2);
+                
+                // Label
+                const labelEl = document.createElement('div');
+                labelEl.className = `path-label ${label === 'Yes' ? 'label-yes' : 'label-no'}`;
+                labelEl.style.left = `${(fromX + toX) / 2 - 15}px`;
+                labelEl.style.top = `${midY - 12}px`;
+                labelEl.textContent = label;
+                container.appendChild(labelEl);
+                
+                // Arrow
+                this.addArrow(container, toX, toY, 'down');
+            }
+
+            drawConvergeLine(container, fromX, fromY, toX, toY) {
+                const convergenceY = toY - 50;
+                
+                // Line down from output
+                const vertLine1 = document.createElement('div');
+                vertLine1.className = 'flowchart-line line-vertical';
+                vertLine1.style.left = `${fromX}px`;
+                vertLine1.style.top = `${fromY}px`;
+                vertLine1.style.height = `${convergenceY - fromY}px`;
+                container.appendChild(vertLine1);
+                
+                // Horizontal convergence line
+                const horizLine = document.createElement('div');
+                horizLine.className = 'flowchart-line line-horizontal';
+                horizLine.style.top = `${convergenceY}px`;
+                if (fromX < toX) {
+                    horizLine.style.left = `${fromX}px`;
+                    horizLine.style.width = `${toX - fromX}px`;
+                } else {
+                    horizLine.style.left = `${toX}px`;
+                    horizLine.style.width = `${fromX - toX}px`;
+                }
+                container.appendChild(horizLine);
+                
+                // Final vertical line down to converge point
+                if (Math.abs(fromX - toX) > 10) { // Only if they're actually apart
+                    const finalVertLine = document.createElement('div');
+                    finalVertLine.className = 'flowchart-line line-vertical';
+                    finalVertLine.style.left = `${toX}px`;
+                    finalVertLine.style.top = `${convergenceY}px`;
+                    finalVertLine.style.height = `${toY - convergenceY}px`;
+                    container.appendChild(finalVertLine);
+                    
+                    // Arrow pointing down to the convergence node
+                    this.addArrow(container, toX, toY, 'down');
+                }
+            }
+
+            drawLoopBackLine(container, fromX, fromY, toX, toY) {
+                const rightX = Math.max(fromX, toX) + 100;
+                
+                // Line right from increment
+                const horizLine1 = document.createElement('div');
+                horizLine1.className = 'flowchart-line line-horizontal';
+                horizLine1.style.left = `${fromX}px`;
+                horizLine1.style.top = `${fromY}px`;
+                horizLine1.style.width = `${rightX - fromX}px`;
+                container.appendChild(horizLine1);
+                
+                // Line up
+                const vertLine = document.createElement('div');
+                vertLine.className = 'flowchart-line line-vertical';
+                vertLine.style.left = `${rightX}px`;
+                vertLine.style.top = `${toY}px`;
+                vertLine.style.height = `${fromY - toY}px`;
+                container.appendChild(vertLine);
+                
+                // Line left to decision
+                const horizLine2 = document.createElement('div');
+                horizLine2.className = 'flowchart-line line-horizontal';
+                horizLine2.style.left = `${toX}px`;
+                horizLine2.style.top = `${toY}px`;
+                horizLine2.style.width = `${rightX - toX}px`;
+                container.appendChild(horizLine2);
+                
+                // Arrow pointing to decision
+                this.addArrow(container, toX - 10, toY, 'left');
+            }
+
+            addArrow(container, x, y, direction) {
+                const arrow = document.createElement('div');
+                arrow.className = 'flowchart-arrow';
+                
+                switch (direction) {
+                    case 'down':
+                        arrow.style.left = `${x - 6}px`;
+                        arrow.style.top = `${y - 10}px`;
+                        break;
+                    case 'right':
+                        arrow.className += ' arrow-right';
+                        arrow.style.left = `${x - 10}px`;
+                        arrow.style.top = `${y - 6}px`;
+                        break;
+                    case 'left':
+                        arrow.className += ' arrow-left';
+                        arrow.style.left = `${x}px`;
+                        arrow.style.top = `${y - 6}px`;
+                        break;
+                }
+                
+                container.appendChild(arrow);
+            }
+
+            getNodeById(nodeId) {
+                return this.currentAlgorithm.nodes.find(node => node.id === nodeId);
+            }
+
+            getNextNodeId(currentNode) {
+                // Find the connection from current node
+                const connection = this.currentAlgorithm.connections.find(conn => conn.from === currentNode.id);
+                if (!connection) return null;
+                
+                // For decision nodes, determine which path to take
+                if (currentNode.type === 'decision') {
+                    const condition = this.evaluateDecision(currentNode);
+                    if (condition) {
+                        // Take YES path
+                        const yesConnection = this.currentAlgorithm.connections.find(conn => 
+                            conn.from === currentNode.id && conn.type === 'yes');
+                        return yesConnection ? yesConnection.to : null;
+                    } else {
+                        // Take NO path
+                        const noConnection = this.currentAlgorithm.connections.find(conn => 
+                            conn.from === currentNode.id && conn.type === 'no');
+                        return noConnection ? noConnection.to : null;
+                    }
+                }
+                
+                return connection.to;
+            }
+
+            evaluateDecision(node) {
+                // Simple decision logic based on test cases
+                switch (node.id) {
+                    case 'decision': // Grade check
+                        return this.currentAlgorithm.testCase.mark >= 50;
+                    case 'check-pos': // Number positive check
+                        return this.currentAlgorithm.testCase.number > 0;
+                    case 'check-zero': // Number zero check
+                        return this.currentAlgorithm.testCase.number === 0;
+                    case 'check': // Loop condition
+                        const counter = this.variables.counter || 1;
+                        return counter <= (this.currentAlgorithm.testCase.limit || 5);
+                    default:
+                        return true;
+                }
+            }
+
+            createShape(step) {
+                const shape = document.createElement('div');
+                shape.className = 'flowchart-shape w-32 h-16 relative';
+                
+                switch (step.type) {
+                    case 'terminal':
+                        shape.classList.add('oval');
+                        shape.textContent = step.text;
+                        break;
+                    case 'process':
+                        shape.classList.add('rectangle');
+                        shape.textContent = step.text;
+                        break;
+                    case 'decision':
+                        shape.classList.add('diamond', 'w-24', 'h-24');
+                        const decisionText = document.createElement('div');
+                        decisionText.className = 'diamond-text absolute inset-0 flex items-center justify-center text-xs p-2';
+                        decisionText.textContent = step.text;
+                        shape.appendChild(decisionText);
+                        break;
+                    case 'input':
+                    case 'output':
+                        shape.classList.add('parallelogram');
+                        const ioText = document.createElement('div');
+                        ioText.className = 'parallelogram-text text-xs p-2';
+                        ioText.textContent = step.text;
+                        shape.appendChild(ioText);
+                        break;
+                }
+                
+                return shape;
+            }
+
+            startAnimation() {
+                if (!this.currentAlgorithm) return;
+                
+                // Initialize execution
+                this.currentNode = this.currentAlgorithm.nodes[0]; // Start with first node
+                this.variables = {};
+                this.executionPath = [];
+                this.isRunning = true;
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('step-btn').disabled = false;
+                document.getElementById('reset-btn').disabled = false;
+                
+                this.clearLog();
+                this.logMessage(`Starting ${this.currentAlgorithm.title}`, 'info');
+                this.logMessage(`Test case: ${JSON.stringify(this.currentAlgorithm.testCase)}`, 'info');
+                
+                const speed = document.getElementById('speed-slider').value;
+                this.animationInterval = setInterval(() => {
+                    this.nextStep();
+                }, parseInt(speed));
+            }
+
+            nextStep() {
+                console.log('NextStep called, currentNode:', this.currentNode);
+                
+                if (!this.currentAlgorithm || !this.currentNode) {
+                    console.log('Missing algorithm or node, ending animation');
+                    this.endAnimation();
+                    return;
+                }
+
+                this.highlightStep(this.currentNode.id);
+                this.executeStep(this.currentNode);
+                
+                // Find next step based on current node and connections
+                const nextNodeId = this.getNextNodeId(this.currentNode);
+                console.log('Next node ID:', nextNodeId);
+                
+                if (nextNodeId) {
+                    this.currentNode = this.getNodeById(nextNodeId);
+                    console.log('Moving to next node:', this.currentNode);
+                } else {
+                    console.log('No next node, ending animation');
+                    this.endAnimation();
+                }
+            }
+
+            determineDecisionPath(step) {
+                // Simple logic for demo purposes
+                switch (step.id) {
+                    case 'check-positive':
+                        return this.currentAlgorithm.testCase.number > 0 ? step.yes : step.no;
+                    case 'check-zero':
+                        return this.currentAlgorithm.testCase.number === 0 ? step.yes : step.no;
+                    case 'compare-b':
+                        return this.currentAlgorithm.testCase.b > this.currentAlgorithm.testCase.a ? step.yes : step.no;
+                    case 'compare-c':
+                        const currentMax = this.currentAlgorithm.testCase.b > this.currentAlgorithm.testCase.a ? 
+                                         this.currentAlgorithm.testCase.b : this.currentAlgorithm.testCase.a;
+                        return this.currentAlgorithm.testCase.c > currentMax ? step.yes : step.no;
+                    case 'check':
+                        // For loops, simulate a few iterations
+                        if (step.text.includes('i ≤ n')) {
+                            return this.executionPath.filter(p => p.includes('multiply')).length < this.currentAlgorithm.testCase.n ? step.yes : step.no;
+                        } else if (step.text.includes('i < n')) {
+                            return this.executionPath.filter(p => p.includes('add')).length < this.currentAlgorithm.testCase.array.length ? step.yes : step.no;
+                        }
+                        return step.no;
+                    default:
+                        return step.next;
+                }
+            }
+
+            executeStep(node) {
+                this.executionPath.push(node.id);
+                
+                switch (node.type) {
+                    case 'start':
+                    case 'end':
+                        this.logMessage(`${node.text}`, 'terminal');
+                        break;
+                    case 'input':
+                        // Pause execution and wait for user input
+                        this.waitingForInput = true;
+                        this.logMessage(`⏸️ Waiting for input: ${node.text}`, 'input');
+                        this.logMessage(`📝 Please enter a value in the input box above and click "Update & Test" to continue`, 'info');
+                        
+                        // Highlight the input section
+                        this.highlightInputSection();
+                        return; // Don't continue execution automatically
+                    case 'process':
+                        this.logMessage(`Processing: ${node.text}`, 'process');
+                        // Update variables if it's an assignment
+                        if (node.text.includes('=')) {
+                            this.processAssignment(node.text);
+                        }
+                        break;
+                    case 'decision':
+                        const condition = this.evaluateDecision(node);
+                        const result = condition ? 'YES' : 'NO';
+                        this.logMessage(`Decision: ${node.text} → ${result}`, 'decision');
+                        break;
+                    case 'output':
+                        this.logMessage(`${node.text}`, 'output');
+                        break;
+                }
+                
+                this.updateVariablesDisplay();
+            }
+
+            processAssignment(text) {
+                // Handle simple assignments like "counter = 1" or "grade = "Pass""
+                if (text.includes('counter')) {
+                    if (text.includes('counter = 1')) {
+                        this.variables.counter = 1;
+                    } else if (text.includes('counter + 1')) {
+                        this.variables.counter = (this.variables.counter || 1) + 1;
+                    }
+                } else if (text.includes('grade')) {
+                    if (text.includes('"Pass"')) {
+                        this.variables.grade = "Pass";
+                    } else if (text.includes('"Fail"')) {
+                        this.variables.grade = "Fail";
+                    }
+                }
+            }
+
+            highlightStep(stepId) {
+                // Remove previous highlights
+                document.querySelectorAll('.node-highlight').forEach(el => el.classList.remove('node-highlight'));
+                
+                // Highlight current step
+                const nodeElement = document.getElementById(`node-${stepId}`);
+                if (nodeElement) {
+                    nodeElement.classList.add('node-highlight');
+                    // Remove auto-scroll to prevent page jumping
+                    // nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            logMessage(message, type = 'normal') {
+                const logContainer = document.getElementById('execution-log');
+                if (logContainer.querySelector('.italic')) {
+                    logContainer.innerHTML = '';
+                }
+                
+                const msgEl = document.createElement('div');
+                msgEl.className = 'fade-in';
+                msgEl.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+                
+                switch (type) {
+                    case 'info':
+                        msgEl.className += ' text-blue-600 dark:text-blue-400 font-semibold';
+                        break;
+                    case 'terminal':
+                        msgEl.className += ' text-green-600 dark:text-green-400 font-bold';
+                        break;
+                    case 'input':
+                        msgEl.className += ' text-purple-600 dark:text-purple-400';
+                        break;
+                    case 'process':
+                        msgEl.className += ' text-blue-600 dark:text-blue-400';
+                        break;
+                    case 'decision':
+                        msgEl.className += ' text-yellow-600 dark:text-yellow-400 font-medium';
+                        break;
+                    case 'output':
+                        msgEl.className += ' text-green-600 dark:text-green-400 font-medium';
+                        break;
+                }
+                
+                logContainer.appendChild(msgEl);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            clearLog() {
+                document.getElementById('execution-log').innerHTML = '';
+            }
+
+            endAnimation() {
+                if (this.animationInterval) {
+                    clearInterval(this.animationInterval);
+                    this.animationInterval = null;
+                }
+                
+                this.isRunning = false;
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('step-btn').disabled = true;
+                
+                this.logMessage('Algorithm execution completed!', 'info');
+                
+                // Remove highlights
+                setTimeout(() => {
+                    document.querySelectorAll('.node-highlight').forEach(el => el.classList.remove('node-highlight'));
+                }, 2000);
+            }
+
+            resetAnimation() {
+                if (this.animationInterval) {
+                    clearInterval(this.animationInterval);
+                    this.animationInterval = null;
+                }
+                
+                this.currentNode = null;
+                this.isRunning = false;
+                this.executionPath = [];
+                this.variables = {};
+                this.waitingForInput = false;
+                
+                document.getElementById('start-btn').disabled = this.currentAlgorithm ? false : true;
+                
+                const stepBtn = document.getElementById('step-btn');
+                stepBtn.disabled = this.currentAlgorithm ? false : true;
+                stepBtn.innerHTML = '<i class="fa fa-step-forward mr-2"></i> Step by Step';
+                stepBtn.className = 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center';
+                if (stepBtn.disabled) {
+                    stepBtn.className += ' opacity-50 cursor-not-allowed';
+                }
+                
+                document.getElementById('reset-btn').disabled = true;
+                
+                this.clearLog();
+                this.updateVariablesDisplay();
+                
+                // Remove highlights
+                document.querySelectorAll('.node-highlight').forEach(el => el.classList.remove('node-highlight'));
+                
+                if (this.currentAlgorithm) {
+                    document.getElementById('execution-log').innerHTML = `<div class="text-gray-500 dark:text-gray-400 italic">Ready to execute "${this.currentAlgorithm.title}"...</div>`;
+                }
+            }
+
+            updateVariablesDisplay() {
+                const container = document.getElementById('variables-container');
+                if (!container) return;
+                
+                const vars = Object.keys(this.variables);
+                if (vars.length === 0) {
+                    container.innerHTML = `<div class="text-gray-500 dark:text-gray-400 text-center py-4">No variables yet</div>`;
+                    return;
+                }
+                
+                container.innerHTML = '';
+                vars.forEach(v => {
+                    const varEl = document.createElement('div');
+                    varEl.className = 'py-1 font-mono text-sm';
+                    let value = this.variables[v];
+                    if (typeof value === 'string') value = `"${value}"`;
+                    varEl.innerHTML = `<span class="font-semibold text-accent">${v}</span> = <span class="text-secondary">${value}</span>`;
+                    container.appendChild(varEl);
+                });
+            }
+
+            highlightInputSection() {
+                const inputSection = document.getElementById('interactive-inputs');
+                if (inputSection) {
+                    inputSection.style.animation = 'pulse 2s infinite';
+                    inputSection.style.border = '2px solid #3b82f6';
+                    inputSection.style.borderRadius = '8px';
+                    
+                    // Remove highlight after a few seconds
+                    setTimeout(() => {
+                        inputSection.style.animation = '';
+                        inputSection.style.border = '';
+                    }, 4000);
+                }
+            }
+
+            resumeFromInput() {
+                if (this.waitingForInput && this.isRunning) {
+                    this.waitingForInput = false;
+                    this.logMessage(`✅ Input received! Continuing execution...`, 'info');
+                    
+                    // Log the input value
+                    if (this.currentNode && this.currentNode.type === 'input') {
+                        this.logMessage(`${this.currentNode.text}: ${JSON.stringify(this.currentAlgorithm.testCase)}`, 'input');
+                    }
+                    
+                    // Continue to next step
+                    this.nextStep();
+                }
+            }
+
+            stepExecution() {
+                console.log('Step button clicked'); // Debug log
+                
+                if (!this.currentAlgorithm) {
+                    console.log('No algorithm selected');
+                    this.logMessage('Please select an algorithm first!', 'error');
+                    return;
+                }
+                
+                if (!this.isRunning) {
+                    // Initialize for step-by-step execution
+                    console.log('Initializing step execution');
+                    this.currentNode = this.currentAlgorithm.nodes[0];
+                    this.variables = {};
+                    this.executionPath = [];
+                    this.isRunning = true;
+                    this.waitingForInput = false;
+                    document.getElementById('start-btn').disabled = true;
+                    document.getElementById('reset-btn').disabled = false;
+                    
+                    // Update step button text to indicate it's ready
+                    const stepBtn = document.getElementById('step-btn');
+                    stepBtn.innerHTML = '<i class="fa fa-step-forward mr-2"></i> Next Step';
+                    stepBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center';
+                    
+                    this.clearLog();
+                    this.logMessage(`Starting ${this.currentAlgorithm.title} (Step-by-step mode)`, 'info');
+                    this.logMessage(`Test case: ${JSON.stringify(this.currentAlgorithm.testCase)}`, 'info');
+                    this.logMessage('Click "Next Step" to proceed through each step', 'info');
+                    
+                    // Highlight the first node
+                    this.highlightStep(this.currentNode.id);
+                    this.logMessage(`Step 1: Currently at "${this.currentNode.text}"`, 'step');
+                    return;
+                }
+                
+                // Check if we're waiting for input
+                if (this.waitingForInput) {
+                    this.logMessage('⚠️ Please enter a value in the input box above first!', 'error');
+                    this.highlightInputSection();
+                    return;
+                }
+                
+                console.log('Current node:', this.currentNode);
+                this.nextStep();
+            }
+
+            bindMarkInput() {
+                const updateBtn = document.getElementById('update-mark-btn');
+                const markInput = document.getElementById('mark-input');
+                
+                if (updateBtn && markInput) {
+                    updateBtn.addEventListener('click', () => {
+                        const newMark = parseInt(markInput.value);
+                        if (newMark >= 0 && newMark <= 100) {
+                            this.currentAlgorithm.testCase.mark = newMark;
+                            this.updateTestCaseDisplay();
+                            this.logMessage(`✅ Updated test mark to: ${newMark} (${newMark >= 50 ? 'Pass' : 'Fail'})`, 'info');
+                            
+                            // If we're waiting for input during step execution, resume
+                            if (this.waitingForInput) {
+                                this.resumeFromInput();
+                            } else {
+                                this.resetAnimation();
+                            }
+                        } else {
+                            this.logMessage('❌ Please enter a valid mark between 0 and 100', 'error');
+                            markInput.focus();
+                        }
+                    });
+                    
+                    markInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') updateBtn.click();
+                    });
+                }
+            }
+
+            bindNumberInput() {
+                const updateBtn = document.getElementById('update-number-btn');
+                const numberInput = document.getElementById('number-input');
+                
+                if (updateBtn && numberInput) {
+                    updateBtn.addEventListener('click', () => {
+                        const newNumber = parseFloat(numberInput.value);
+                        if (!isNaN(newNumber)) {
+                            this.currentAlgorithm.testCase.number = newNumber;
+                            this.updateTestCaseDisplay();
+                            this.logMessage(`Updated test number to: ${newNumber}`, 'info');
+                            
+                            // If we're waiting for input during step execution, resume
+                            if (this.waitingForInput) {
+                                this.resumeFromInput();
+                            } else {
+                                this.resetAnimation();
+                            }
+                        } else {
+                            alert('Please enter a valid number');
+                        }
+                    });
+                    
+                    numberInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') updateBtn.click();
+                    });
+                }
+            }
+
+            bindLimitInput() {
+                const updateBtn = document.getElementById('update-limit-btn');
+                const limitInput = document.getElementById('limit-input');
+                
+                if (updateBtn && limitInput) {
+                    updateBtn.addEventListener('click', () => {
+                        const newLimit = parseInt(limitInput.value);
+                        if (newLimit >= 1 && newLimit <= 10) {
+                            this.currentAlgorithm.testCase.limit = newLimit;
+                            this.updateTestCaseDisplay();
+                            this.logMessage(`Updated counter limit to: ${newLimit}`, 'info');
+                            
+                            // If we're waiting for input during step execution, resume
+                            if (this.waitingForInput) {
+                                this.resumeFromInput();
+                            } else {
+                                this.resetAnimation();
+                            }
+                        } else {
+                            alert('Please enter a limit between 1 and 10');
+                        }
+                    });
+                    
+                    limitInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') updateBtn.click();
+                    });
+                }
+            }
+
+            updateTestCaseDisplay() {
+                const descElement = document.getElementById('algorithm-description');
+                const testCaseDiv = descElement.querySelector('.bg-gray-100, .bg-gray-700');
+                if (testCaseDiv) {
+                    testCaseDiv.innerHTML = `<strong>Current Test Values:</strong> ${JSON.stringify(this.currentAlgorithm.testCase)}`;
+                }
+            }
+
+            clearLog() {
+                const logContainer = document.getElementById('execution-log');
+                if (logContainer) {
+                    logContainer.innerHTML = '';
+                }
+            }
+        }
+
+        // Initialize demo when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new FlowchartDemo();
+        });
+    </script>
+</body>
+</html>

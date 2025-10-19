@@ -1,0 +1,1039 @@
+<!DOCTYPE html><html lang="en"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Flowchart Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .toolbar h2 {
+            margin-bottom: 20px;
+            color: #ecf0f1;
+        }
+
+        .tool-section {
+            margin-bottom: 25px;
+        }
+
+        .tool-section h3 {
+            margin-bottom: 10px;
+            color: #bdc3c7;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .tool-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+
+        .tool-button:hover {
+            background-color: #4a6741;
+        }
+
+        .tool-button.active {
+            background-color: #27ae60;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background-color: white;
+            overflow: hidden;
+        }
+
+        .canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-image: 
+                radial-gradient(circle, #ddd 1px, transparent 1px);
+            background-size: 20px 20px;
+            cursor: crosshair;
+        }
+
+        /* Flowchart Elements */
+        .flowchart-element {
+            position: absolute;
+            border: 2px solid #333;
+            padding: 10px;
+            background-color: white;
+            cursor: move;
+            user-select: none;
+            min-width: 80px;
+            text-align: center;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .flowchart-element.selected {
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+
+        .flowchart-element.terminal {
+            background-color: #a8d8a8;
+            border-radius: 25px;
+            border-color: #2d5a2d;
+        }
+
+        .flowchart-element.process {
+            background-color: #ffcc99;
+            border-color: #cc6600;
+        }
+
+        .flowchart-element.decision {
+            background-color: #ffb3ba;
+            border-color: #cc0000;
+            transform: rotate(45deg);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flowchart-element.decision .content {
+            transform: rotate(-45deg);
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        .flowchart-element.input-output {
+            background-color: #ffffcc;
+            border-color: #cccc00;
+            clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+        }
+
+        /* Connection Lines */
+        .connection-line {
+            position: absolute;
+            border-top: 2px solid #333;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .connection-line::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid #333;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .control-button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .execute-btn {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .clear-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .save-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        /* Execution Panel */
+        .execution-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 270px;
+            right: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 100;
+        }
+
+        .execution-panel.active {
+            display: block;
+        }
+
+        .variable-input {
+            margin: 10px 0;
+        }
+
+        .variable-input label {
+            display: inline-block;
+            width: 100px;
+            font-weight: bold;
+        }
+
+        .variable-input input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 150px;
+        }
+
+        .execution-output {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            min-height: 100px;
+        }
+
+        /* Property Panel */
+        .property-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            width: 200px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 100;
+        }
+
+        .property-panel.active {
+            display: block;
+        }
+
+        .property-input {
+            margin-bottom: 10px;
+        }
+
+        .property-input label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .property-input input, .property-input select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+<script src="https://puc.poecdn.net/authenticated_preview_page/syncedState.bd4eeeb8e8e02052ee92.js"></script></head>
+<body>
+    <div class="container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <h2>Flowchart Simulator</h2>
+            
+            <div class="tool-section">
+                <h3>Elements</h3>
+                <button class="tool-button" data-tool="terminal">🟢 Terminal (Start/End)</button>
+                <button class="tool-button" data-tool="process">📦 Process</button>
+                <button class="tool-button" data-tool="decision">💎 Decision</button>
+                <button class="tool-button" data-tool="input-output">📄 Input/Output</button>
+            </div>
+
+            <div class="tool-section">
+                <h3>Tools</h3>
+                <button class="tool-button" data-tool="select">👆 Select</button>
+                <button class="tool-button" data-tool="connect">🔗 Connect</button>
+                <button class="tool-button" data-tool="delete">❌ Delete</button>
+            </div>
+
+            <div class="tool-section">
+                <h3>Templates</h3>
+                <button class="tool-button" onclick="loadTemplate('grade')">📊 Grade Calculator</button>
+                <button class="tool-button" onclick="loadTemplate('loop')">🔄 Loop Example</button>
+                <button class="tool-button" onclick="loadTemplate('math')">➕ Math Calculator</button>
+            </div>
+
+            <div class="tool-section">
+                <h3>Variables</h3>
+                <div id="variableList"></div>
+                <button class="tool-button" onclick="addVariable()">➕ Add Variable</button>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="canvas-area">
+            <div class="canvas" id="canvas"></div>
+            
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <button class="control-button execute-btn" onclick="executeFlowchart()">▶️ Execute</button>
+                <button class="control-button clear-btn" onclick="clearCanvas()">🗑️ Clear</button>
+                <button class="control-button save-btn" onclick="saveFlowchart()">💾 Save</button>
+                <input type="file" id="loadFile" style="display: none" accept=".json" onchange="loadFlowchart(event)">
+                <button class="control-button" onclick="document.getElementById('loadFile').click()">📁 Load</button>
+            </div>
+
+            <!-- Property Panel -->
+            <div class="property-panel" id="propertyPanel">
+                <h3>Properties</h3>
+                <div class="property-input">
+                    <label>Text:</label>
+                    <input type="text" id="elementText" onchange="updateElementText()">
+                </div>
+                <div class="property-input">
+                    <label>Type:</label>
+                    <select id="elementType" onchange="updateElementType()">
+                        <option value="terminal">Terminal</option>
+                        <option value="process">Process</option>
+                        <option value="decision">Decision</option>
+                        <option value="input-output">Input/Output</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Execution Panel -->
+            <div class="execution-panel" id="executionPanel">
+                <h3>Flowchart Execution</h3>
+                <div id="executionInputs"></div>
+                <div class="execution-output" id="executionOutput"></div>
+                <button class="control-button" onclick="stepExecution()">⏭️ Step</button>
+                <button class="control-button" onclick="resetExecution()">🔄 Reset</button>
+                <button class="control-button" onclick="closeExecution()">❌ Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTool = 'select';
+        let selectedElement = null;
+        let elements = [];
+        let connections = [];
+        let variables = {};
+        let executionState = {
+            currentElement: null,
+            variables: {},
+            output: [],
+            isExecuting: false,
+            step: 0
+        };
+        let connectingFrom = null;
+
+        // Tool selection
+        document.querySelectorAll('.tool-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.tool-button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentTool = this.dataset.tool;
+                if (currentTool !== 'connect') {
+                    connectingFrom = null;
+                }
+            });
+        });
+
+        // Canvas click handler
+        document.getElementById('canvas').addEventListener('click', function(e) {
+            if (currentTool === 'select') {
+                selectElement(null);
+            } else if (['terminal', 'process', 'decision', 'input-output'].includes(currentTool)) {
+                createElement(e.clientX - this.offsetLeft, e.clientY - this.offsetTop, currentTool);
+            }
+        });
+
+        function createElement(x, y, type) {
+            const element = document.createElement('div');
+            element.className = `flowchart-element ${type}`;
+            element.style.left = x + 'px';
+            element.style.top = y + 'px';
+            
+            const content = document.createElement('div');
+            content.className = 'content';
+            content.textContent = getDefaultText(type);
+            element.appendChild(content);
+
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (currentTool === 'select') {
+                    selectElement(element);
+                } else if (currentTool === 'connect') {
+                    connectElements(element);
+                } else if (currentTool === 'delete') {
+                    deleteElement(element);
+                }
+            });
+
+            // Make draggable
+            makeDraggable(element);
+
+            document.getElementById('canvas').appendChild(element);
+            
+            const elementData = {
+                id: Date.now(),
+                element: element,
+                type: type,
+                text: getDefaultText(type),
+                x: x,
+                y: y
+            };
+            
+            elements.push(elementData);
+        }
+
+        function getDefaultText(type) {
+            switch(type) {
+                case 'terminal': return 'Start';
+                case 'process': return 'Process';
+                case 'decision': return 'Decision?';
+                case 'input-output': return 'Input/Output';
+                default: return 'Element';
+            }
+        }
+
+        function selectElement(element) {
+            // Clear previous selection
+            document.querySelectorAll('.flowchart-element').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            selectedElement = element;
+            
+            if (element) {
+                element.classList.add('selected');
+                showPropertyPanel(element);
+            } else {
+                hidePropertyPanel();
+            }
+        }
+
+        function showPropertyPanel(element) {
+            const panel = document.getElementById('propertyPanel');
+            const elementData = elements.find(e => e.element === element);
+            
+            if (elementData) {
+                document.getElementById('elementText').value = elementData.text;
+                document.getElementById('elementType').value = elementData.type;
+                panel.classList.add('active');
+            }
+        }
+
+        function hidePropertyPanel() {
+            document.getElementById('propertyPanel').classList.remove('active');
+        }
+
+        function updateElementText() {
+            if (selectedElement) {
+                const newText = document.getElementById('elementText').value;
+                const elementData = elements.find(e => e.element === selectedElement);
+                if (elementData) {
+                    elementData.text = newText;
+                    selectedElement.querySelector('.content').textContent = newText;
+                }
+            }
+        }
+
+        function updateElementType() {
+            if (selectedElement) {
+                const newType = document.getElementById('elementType').value;
+                const elementData = elements.find(e => e.element === selectedElement);
+                if (elementData) {
+                    selectedElement.className = `flowchart-element ${newType} selected`;
+                    elementData.type = newType;
+                }
+            }
+        }
+
+        function connectElements(element) {
+            if (!connectingFrom) {
+                connectingFrom = element;
+                element.style.border = '3px solid #3498db';
+            } else if (connectingFrom !== element) {
+                createConnection(connectingFrom, element);
+                connectingFrom.style.border = '';
+                connectingFrom = null;
+            }
+        }
+
+        function createConnection(from, to) {
+            const fromData = elements.find(e => e.element === from);
+            const toData = elements.find(e => e.element === to);
+            
+            if (fromData && toData) {
+                connections.push({
+                    from: fromData.id,
+                    to: toData.id,
+                    fromElement: from,
+                    toElement: to
+                });
+                drawConnections();
+            }
+        }
+
+        function drawConnections() {
+            // Remove existing connection lines
+            document.querySelectorAll('.connection-line').forEach(line => line.remove());
+
+            connections.forEach(conn => {
+                const line = document.createElement('div');
+                line.className = 'connection-line';
+                
+                const fromRect = conn.fromElement.getBoundingClientRect();
+                const toRect = conn.toElement.getBoundingClientRect();
+                const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+                
+                const fromX = fromRect.left - canvasRect.left + fromRect.width / 2;
+                const fromY = fromRect.top - canvasRect.top + fromRect.height;
+                const toX = toRect.left - canvasRect.left + toRect.width / 2;
+                const toY = toRect.top - canvasRect.top;
+                
+                const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+                
+                line.style.width = length + 'px';
+                line.style.left = fromX + 'px';
+                line.style.top = fromY + 'px';
+                line.style.transform = `rotate(${angle}deg)`;
+                line.style.transformOrigin = '0 0';
+                
+                document.getElementById('canvas').appendChild(line);
+            });
+        }
+
+        function deleteElement(element) {
+            const elementIndex = elements.findIndex(e => e.element === element);
+            if (elementIndex > -1) {
+                const elementId = elements[elementIndex].id;
+                
+                // Remove connections
+                connections = connections.filter(conn => 
+                    conn.from !== elementId && conn.to !== elementId
+                );
+                
+                // Remove element
+                elements.splice(elementIndex, 1);
+                element.remove();
+                drawConnections();
+                
+                if (selectedElement === element) {
+                    selectElement(null);
+                }
+            }
+        }
+
+        function makeDraggable(element) {
+            let isDragging = false;
+            let startX, startY, elementX, elementY;
+
+            element.addEventListener('mousedown', function(e) {
+                if (currentTool === 'select') {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    elementX = parseInt(element.style.left);
+                    elementY = parseInt(element.style.top);
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging) {
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+                    element.style.left = (elementX + deltaX) + 'px';
+                    element.style.top = (elementY + deltaY) + 'px';
+                    
+                    // Update element data
+                    const elementData = elements.find(el => el.element === element);
+                    if (elementData) {
+                        elementData.x = elementX + deltaX;
+                        elementData.y = elementY + deltaY;
+                    }
+                    
+                    drawConnections();
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+        }
+
+        function clearCanvas() {
+            elements = [];
+            connections = [];
+            document.getElementById('canvas').innerHTML = '';
+            selectElement(null);
+        }
+
+        function executeFlowchart() {
+            const startElement = elements.find(e => e.type === 'terminal' && e.text.toLowerCase().includes('start'));
+            if (!startElement) {
+                alert('Please add a Start terminal to begin execution');
+                return;
+            }
+
+            executionState = {
+                currentElement: startElement,
+                variables: {...variables},
+                output: [],
+                isExecuting: true,
+                step: 0
+            };
+
+            document.getElementById('executionPanel').classList.add('active');
+            updateExecutionDisplay();
+        }
+
+        function stepExecution() {
+            if (!executionState.isExecuting || !executionState.currentElement) return;
+
+            const currentElement = executionState.currentElement;
+            executionState.step++;
+
+            // Highlight current element
+            document.querySelectorAll('.flowchart-element').forEach(el => {
+                el.style.backgroundColor = '';
+            });
+            currentElement.element.style.backgroundColor = '#ffeb3b';
+
+            // Process element based on type
+            switch (currentElement.type) {
+                case 'terminal':
+                    if (currentElement.text.toLowerCase().includes('end')) {
+                        executionState.output.push(`Execution completed at step ${executionState.step}`);
+                        executionState.isExecuting = false;
+                    } else {
+                        executionState.output.push(`Started execution`);
+                        executionState.currentElement = getNextElement(currentElement);
+                    }
+                    break;
+
+                case 'process':
+                    processStatement(currentElement.text);
+                    executionState.currentElement = getNextElement(currentElement);
+                    break;
+
+                case 'decision':
+                    const condition = evaluateCondition(currentElement.text);
+                    executionState.output.push(`Decision: ${currentElement.text} = ${condition}`);
+                    executionState.currentElement = getNextElement(currentElement, condition);
+                    break;
+
+                case 'input-output':
+                    if (currentElement.text.toLowerCase().includes('input')) {
+                        handleInput(currentElement.text);
+                    } else {
+                        handleOutput(currentElement.text);
+                    }
+                    executionState.currentElement = getNextElement(currentElement);
+                    break;
+            }
+
+            updateExecutionDisplay();
+        }
+
+        function processStatement(statement) {
+            // Simple assignment processing
+            if (statement.includes('←') || statement.includes('=')) {
+                const parts = statement.split(/[←=]/);
+                if (parts.length === 2) {
+                    const variable = parts[0].trim();
+                    const value = parts[1].trim();
+                    
+                    // Evaluate the value
+                    let evaluatedValue;
+                    if (value.includes('+') || value.includes('-') || value.includes('*') || value.includes('/')) {
+                        evaluatedValue = evaluateExpression(value);
+                    } else if (value.match(/^\d+$/)) {
+                        evaluatedValue = parseInt(value);
+                    } else if (value.match(/^\d*\.?\d+$/)) {
+                        evaluatedValue = parseFloat(value);
+                    } else if (value.startsWith('"') && value.endsWith('"')) {
+                        evaluatedValue = value.slice(1, -1);
+                    } else {
+                        evaluatedValue = executionState.variables[value] || value;
+                    }
+                    
+                    executionState.variables[variable] = evaluatedValue;
+                    executionState.output.push(`${variable} = ${evaluatedValue}`);
+                }
+            }
+        }
+
+        function evaluateCondition(condition) {
+            // Simple condition evaluation
+            const operators = ['>=', '<=', '>', '<', '==', '!='];
+            for (let op of operators) {
+                if (condition.includes(op)) {
+                    const parts = condition.split(op);
+                    if (parts.length === 2) {
+                        const left = evaluateValue(parts[0].trim());
+                        const right = evaluateValue(parts[1].trim());
+                        
+                        switch (op) {
+                            case '>=': return left >= right;
+                            case '<=': return left <= right;
+                            case '>': return left > right;
+                            case '<': return left < right;
+                            case '==': return left == right;
+                            case '!=': return left != right;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function evaluateValue(value) {
+            if (value.match(/^\d+$/)) return parseInt(value);
+            if (value.match(/^\d*\.?\d+$/)) return parseFloat(value);
+            return executionState.variables[value] || 0;
+        }
+
+        function evaluateExpression(expression) {
+            // Simple expression evaluation
+            try {
+                // Replace variables with their values
+                let expr = expression;
+                for (let variable in executionState.variables) {
+                    expr = expr.replace(new RegExp(variable, 'g'), executionState.variables[variable]);
+                }
+                return eval(expr);
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function handleInput(statement) {
+            const variable = statement.replace(/input/i, '').trim();
+            const value = prompt(`Enter value for ${variable}:`);
+            if (value !== null) {
+                executionState.variables[variable] = isNaN(value) ? value : parseFloat(value);
+                executionState.output.push(`Input: ${variable} = ${executionState.variables[variable]}`);
+            }
+        }
+
+        function handleOutput(statement) {
+            const variable = statement.replace(/output/i, '').trim();
+            const value = executionState.variables[variable] || variable;
+            executionState.output.push(`Output: ${value}`);
+        }
+
+        function getNextElement(currentElement, condition = null) {
+            const connection = connections.find(conn => conn.from === currentElement.id);
+            if (connection) {
+                return elements.find(e => e.id === connection.to);
+            }
+            return null;
+        }
+
+        function updateExecutionDisplay() {
+            const outputDiv = document.getElementById('executionOutput');
+            outputDiv.innerHTML = '';
+            
+            // Show variables
+            const varsDiv = document.createElement('div');
+            varsDiv.innerHTML = '<strong>Variables:</strong><br>';
+            for (let variable in executionState.variables) {
+                varsDiv.innerHTML += `${variable} = ${executionState.variables[variable]}<br>`;
+            }
+            outputDiv.appendChild(varsDiv);
+            
+            // Show output
+            const outputLogDiv = document.createElement('div');
+            outputLogDiv.innerHTML = '<br><strong>Execution Log:</strong><br>';
+            executionState.output.forEach(line => {
+                outputLogDiv.innerHTML += line + '<br>';
+            });
+            outputDiv.appendChild(outputLogDiv);
+        }
+
+        function resetExecution() {
+            executionState = {
+                currentElement: null,
+                variables: {},
+                output: [],
+                isExecuting: false,
+                step: 0
+            };
+            
+            // Reset element colors
+            document.querySelectorAll('.flowchart-element').forEach(el => {
+                el.style.backgroundColor = '';
+            });
+            
+            updateExecutionDisplay();
+        }
+
+        function closeExecution() {
+            document.getElementById('executionPanel').classList.remove('active');
+            resetExecution();
+        }
+
+        function addVariable() {
+            const name = prompt('Variable name:');
+            if (name) {
+                const value = prompt('Initial value (optional):');
+                variables[name] = value || '';
+                updateVariableList();
+            }
+        }
+
+        function updateVariableList() {
+            const list = document.getElementById('variableList');
+            list.innerHTML = '';
+            for (let variable in variables) {
+                const div = document.createElement('div');
+                div.innerHTML = `${variable}: ${variables[variable]}`;
+                list.appendChild(div);
+            }
+        }
+
+        function saveFlowchart() {
+            const data = {
+                elements: elements.map(e => ({
+                    id: e.id,
+                    type: e.type,
+                    text: e.text,
+                    x: e.x,
+                    y: e.y
+                })),
+                connections: connections.map(c => ({
+                    from: c.from,
+                    to: c.to
+                })),
+                variables: variables
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'flowchart.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadFlowchart(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        clearCanvas();
+                        
+                        // Load elements
+                        data.elements.forEach(elementData => {
+                            createElement(elementData.x, elementData.y, elementData.type);
+                            const element = elements[elements.length - 1];
+                            element.id = elementData.id;
+                            element.text = elementData.text;
+                            element.element.querySelector('.content').textContent = elementData.text;
+                        });
+                        
+                        // Load connections
+                        data.connections.forEach(connData => {
+                            const fromElement = elements.find(e => e.id === connData.from);
+                            const toElement = elements.find(e => e.id === connData.to);
+                            if (fromElement && toElement) {
+                                connections.push({
+                                    from: connData.from,
+                                    to: connData.to,
+                                    fromElement: fromElement.element,
+                                    toElement: toElement.element
+                                });
+                            }
+                        });
+                        
+                        // Load variables
+                        variables = data.variables || {};
+                        updateVariableList();
+                        
+                        drawConnections();
+                    } catch (error) {
+                        alert('Error loading flowchart: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function loadTemplate(templateName) {
+            clearCanvas();
+            
+            switch (templateName) {
+                case 'grade':
+                    createElement(300, 50, 'terminal');
+                    elements[0].text = 'Start';
+                    elements[0].element.querySelector('.content').textContent = 'Start';
+                    
+                    createElement(300, 150, 'input-output');
+                    elements[1].text = 'Input mark';
+                    elements[1].element.querySelector('.content').textContent = 'Input mark';
+                    
+                    createElement(300, 250, 'decision');
+                    elements[2].text = 'mark >= 50';
+                    elements[2].element.querySelector('.content').textContent = 'mark >= 50';
+                    
+                    createElement(200, 350, 'process');
+                    elements[3].text = 'grade ← "Fail"';
+                    elements[3].element.querySelector('.content').textContent = 'grade ← "Fail"';
+                    
+                    createElement(400, 350, 'process');
+                    elements[4].text = 'grade ← "Pass"';
+                    elements[4].element.querySelector('.content').textContent = 'grade ← "Pass"';
+                    
+                    createElement(300, 450, 'input-output');
+                    elements[5].text = 'Output grade';
+                    elements[5].element.querySelector('.content').textContent = 'Output grade';
+                    
+                    createElement(300, 550, 'terminal');
+                    elements[6].text = 'End';
+                    elements[6].element.querySelector('.content').textContent = 'End';
+                    
+                    // Create connections
+                    connections = [
+                        {from: elements[0].id, to: elements[1].id, fromElement: elements[0].element, toElement: elements[1].element},
+                        {from: elements[1].id, to: elements[2].id, fromElement: elements[1].element, toElement: elements[2].element},
+                        {from: elements[2].id, to: elements[3].id, fromElement: elements[2].element, toElement: elements[3].element},
+                        {from: elements[2].id, to: elements[4].id, fromElement: elements[2].element, toElement: elements[4].element},
+                        {from: elements[3].id, to: elements[5].id, fromElement: elements[3].element, toElement: elements[5].element},
+                        {from: elements[4].id, to: elements[5].id, fromElement: elements[4].element, toElement: elements[5].element},
+                        {from: elements[5].id, to: elements[6].id, fromElement: elements[5].element, toElement: elements[6].element}
+                    ];
+                    
+                    drawConnections();
+                    break;
+                    
+                case 'loop':
+                    // Simple loop template
+                    createElement(300, 50, 'terminal');
+                    elements[0].text = 'Start';
+                    elements[0].element.querySelector('.content').textContent = 'Start';
+                    
+                    createElement(300, 150, 'process');
+                    elements[1].text = 'i ← 1';
+                    elements[1].element.querySelector('.content').textContent = 'i ← 1';
+                    
+                    createElement(300, 250, 'decision');
+                    elements[2].text = 'i <= 10';
+                    elements[2].element.querySelector('.content').textContent = 'i <= 10';
+                    
+                    createElement(300, 350, 'input-output');
+                    elements[3].text = 'Output i';
+                    elements[3].element.querySelector('.content').textContent = 'Output i';
+                    
+                    createElement(300, 450, 'process');
+                    elements[4].text = 'i ← i + 1';
+                    elements[4].element.querySelector('.content').textContent = 'i ← i + 1';
+                    
+                    createElement(500, 250, 'terminal');
+                    elements[5].text = 'End';
+                    elements[5].element.querySelector('.content').textContent = 'End';
+                    
+                    connections = [
+                        {from: elements[0].id, to: elements[1].id, fromElement: elements[0].element, toElement: elements[1].element},
+                        {from: elements[1].id, to: elements[2].id, fromElement: elements[1].element, toElement: elements[2].element},
+                        {from: elements[2].id, to: elements[3].id, fromElement: elements[2].element, toElement: elements[3].element},
+                        {from: elements[3].id, to: elements[4].id, fromElement: elements[3].element, toElement: elements[4].element},
+                        {from: elements[4].id, to: elements[2].id, fromElement: elements[4].element, toElement: elements[2].element},
+                        {from: elements[2].id, to: elements[5].id, fromElement: elements[2].element, toElement: elements[5].element}
+                    ];
+                    
+                    drawConnections();
+                    break;
+
+                case 'math':
+                    // Math calculator template
+                    createElement(300, 50, 'terminal');
+                    elements[0].text = 'Start';
+                    elements[0].element.querySelector('.content').textContent = 'Start';
+                    
+                    createElement(300, 150, 'input-output');
+                    elements[1].text = 'Input a';
+                    elements[1].element.querySelector('.content').textContent = 'Input a';
+                    
+                    createElement(300, 250, 'input-output');
+                    elements[2].text = 'Input b';
+                    elements[2].element.querySelector('.content').textContent = 'Input b';
+                    
+                    createElement(300, 350, 'process');
+                    elements[3].text = 'sum ← a + b';
+                    elements[3].element.querySelector('.content').textContent = 'sum ← a + b';
+                    
+                    createElement(300, 450, 'input-output');
+                    elements[4].text = 'Output sum';
+                    elements[4].element.querySelector('.content').textContent = 'Output sum';
+                    
+                    createElement(300, 550, 'terminal');
+                    elements[5].text = 'End';
+                    elements[5].element.querySelector('.content').textContent = 'End';
+                    
+                    connections = [
+                        {from: elements[0].id, to: elements[1].id, fromElement: elements[0].element, toElement: elements[1].element},
+                        {from: elements[1].id, to: elements[2].id, fromElement: elements[1].element, toElement: elements[2].element},
+                        {from: elements[2].id, to: elements[3].id, fromElement: elements[2].element, toElement: elements[3].element},
+                        {from: elements[3].id, to: elements[4].id, fromElement: elements[3].element, toElement: elements[4].element},
+                        {from: elements[4].id, to: elements[5].id, fromElement: elements[4].element, toElement: elements[5].element}
+                    ];
+                    
+                    drawConnections();
+                    break;
+            }
+        }
+
+        // Initialize with select tool
+        document.querySelector('[data-tool="select"]').classList.add('active');
+    </script>
+
+
+</body></html>
